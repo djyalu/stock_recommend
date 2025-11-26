@@ -861,6 +861,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const msgObj = messages[key];
         return msgObj ? (msgObj[currentLang] || msgObj['en']) : `Advice for ${stock}`;
     }
+    // Expose for debugging/testing
+    window.stockGuru = {
+        updateLanguage,
+        renderInvestors,
+        investors
+    };
+
+    console.log('Stock Guru: Initializing...');
     // Initialize
     updateLanguage();
+    console.log('Stock Guru: Initialization complete.');
 });
