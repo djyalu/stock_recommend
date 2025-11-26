@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Guru - Investment Wisdom</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <p id="subTitle" class="subtitle">Get investment wisdom from the world's greatest masters.</p>
+
+    <div class="search-container">
+        <input type="text" id="stockInput" placeholder="Enter stock name (e.g., Tesla, Samsung)...">
+        <button id="analyzeBtn" class="primary-btn">Get Advice</button>
+    </div>
+    </div>
+    </header>
+
+    <main class="container">
+        <h2 id="selectTitle">Select Your Gurus</h2>
+        <div id="investorGrid" class="investor-grid">
+            <!-- Investors will be populated here by JS -->
+        </div>
+
+        <section id="resultsSection" class="results-section">
+            <h2 id="resultsTitle">The Verdict</h2>
+
+            <div id="stockSummary" class="stock-summary hidden">
+                <div class="stock-header">
+                    <div class="stock-main">
+                        <h3 id="stockNameDisplay">Stock Name</h3>
+                        <span id="stockTicker" class="ticker">TICKER</span>
+                    </div>
+                    <div class="stock-price-container">
+                        <span id="stockPrice" class="current-price">0.00</span>
+                        <div class="price-change">
+                            <span id="stockChange">0.00</span>
+                            <span id="stockChangePercent">(0.00%)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stock-details">
+                    <div class="detail-item">
+                        <span class="label">Volume</span>
+                        <span id="stockVolume" class="value">0</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Sentiment</span>
+                        <div class="sentiment-meter">
+                            <div id="sentimentFill" class="sentiment-fill" style="width: 50%"></div>
+                        </div>
+                        <span id="sentimentText" class="value">Neutral</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultsGrid" class="results-grid">
+                <!-- Advice cards will appear here -->
+            </div>
+
+            <div id="newsSection" class="news-section hidden">
+                <h3 class="section-title">Latest News</h3>
+                <div id="newsGrid" class="news-grid">
+                    <!-- News items will be populated here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+    </body>
+
+</html>
