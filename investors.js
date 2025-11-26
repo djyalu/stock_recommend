@@ -1,7 +1,7 @@
 const investors = [
     {
         id: 'buffett',
-        image: 'assets/warren_buffett_nano.png',
+        image: 'assets/Warren Buffett - The Oracle of Omaha.png',
         name: {
             en: 'Warren Buffett', ko: '워렌 버핏', ja: 'ウォーレン・バフェット', zh: '沃伦·巴菲特', es: 'Warren Buffett'
         },
@@ -25,7 +25,7 @@ const investors = [
     },
     {
         id: 'lynch',
-        image: 'assets/peter_lynch_nano.png',
+        image: 'assets/Peter Lynch - The Chameleon.png',
         name: {
             en: 'Peter Lynch', ko: '피터 린치', ja: 'ピーター・リンチ', zh: '彼得·林奇', es: 'Peter Lynch'
         },
@@ -49,7 +49,7 @@ const investors = [
     },
     {
         id: 'dalio',
-        image: 'assets/ray_dalio_nano.png',
+        image: 'assets/Ray Dalio - The Macro Master.png',
         name: {
             en: 'Ray Dalio', ko: '레이 달리오', ja: 'レイ・ダリオ', zh: '雷·达里奥', es: 'Ray Dalio'
         },
@@ -73,7 +73,7 @@ const investors = [
     },
     {
         id: 'soros',
-        image: 'assets/george_soros_nano.png',
+        image: 'assets/George Soros - The Man Who Broke the Bank.png',
         name: {
             en: 'George Soros', ko: '조지 소로스', ja: 'ジョージ・ソロス', zh: '乔治·索罗斯', es: 'George Soros'
         },
@@ -97,7 +97,7 @@ const investors = [
     },
     {
         id: 'munger',
-        image: 'assets/charlie_munger_nano.png',
+        image: 'assets/Charlie Munger - The Architect.png',
         name: {
             en: 'Charlie Munger', ko: '찰리 멍거', ja: 'チャーリー・マンガー', zh: '查理·芒格', es: 'Charlie Munger'
         },
@@ -121,7 +121,7 @@ const investors = [
     },
     {
         id: 'graham',
-        image: 'assets/benjamin_graham_nano.png',
+        image: 'assets/Benjamin Graham - The Father of Value Investing.png',
         name: {
             en: 'Benjamin Graham', ko: '벤자민 그레이엄', ja: 'ベンジャミン・グレアム', zh: '本杰明·格雷厄姆', es: 'Benjamin Graham'
         },
@@ -145,7 +145,7 @@ const investors = [
     },
     {
         id: 'wood',
-        image: 'assets/cathie_wood_nano.png',
+        image: 'assets/Cathie Wood - The Innovation Evangelist.png',
         name: {
             en: 'Cathie Wood', ko: '캐시 우드', ja: 'キャシー・ウッド', zh: '凯西·伍德', es: 'Cathie Wood'
         },
@@ -169,7 +169,7 @@ const investors = [
     },
     {
         id: 'icahn',
-        image: 'assets/carl_icahn_nano.png',
+        image: 'assets/Carl Icahn - The Corporate Raider.png',
         name: {
             en: 'Carl Icahn', ko: '칼 아이칸', ja: 'カール・アイカーン', zh: '卡尔·伊坎', es: 'Carl Icahn'
         },
@@ -193,7 +193,7 @@ const investors = [
     },
     {
         id: 'ackman',
-        image: 'assets/bill_ackman_nano.png',
+        image: 'assets/Bill Ackman - The Activist.png',
         name: {
             en: 'Bill Ackman', ko: '빌 애크먼', ja: 'ビル・アックマン', zh: '比尔·阿克曼', es: 'Bill Ackman'
         },
@@ -217,7 +217,7 @@ const investors = [
     },
     {
         id: 'simons',
-        image: 'assets/jim_simons_nano.png',
+        image: 'assets/Jim Simons - The Quant King.png',
         name: {
             en: 'Jim Simons', ko: '짐 사이먼스', ja: 'ジム・シモンズ', zh: '吉姆·西蒙斯', es: 'Jim Simons'
         },
