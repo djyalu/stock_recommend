@@ -371,14 +371,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Yahoo Finance API Integration ---
 
     // Using a CORS proxy to allow requests from file:// or local environment
-    const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+    // Using multiple CORS proxies for reliability
+    const PROXIES = [
+        'https://corsproxy.io/?',
+        'https://api.allorigins.win/raw?url='
+    ];
     const BASE_URL = 'https://query1.finance.yahoo.com';
+
+    async function fetchWithProxy(targetUrl) {
+        for (const proxy of PROXIES) {
+            try {
+                const url = `${proxy}${encodeURIComponent(targetUrl)}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (e) {
+                console.warn(`Proxy ${proxy} failed:`, e);
+                // Continue to next proxy
+            }
+        }
+        throw new Error("All proxies failed");
+    }
 
     async function searchSymbol(query) {
         try {
-            const url = `${CORS_PROXY}${encodeURIComponent(`${BASE_URL}/v1/finance/search?q=${query}&quotesCount=1&newsCount=0`)}`;
-            const response = await fetch(url);
-            const data = await response.json();
+            const targetUrl = `${BASE_URL}/v1/finance/search?q=${query}&quotesCount=1&newsCount=0`;
+            const data = await fetchWithProxy(targetUrl);
 
             if (data.quotes && data.quotes.length > 0) {
                 return data.quotes[0]; // Return the best match
@@ -392,9 +410,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchStockData(ticker) {
         try {
-            const url = `${CORS_PROXY}${encodeURIComponent(`${BASE_URL}/v8/finance/chart/${ticker}?interval=1d&range=1d`)}`;
-            const response = await fetch(url);
-            const data = await response.json();
+            const targetUrl = `${BASE_URL}/v8/finance/chart/${ticker}?interval=1d&range=1d`;
+            const data = await fetchWithProxy(targetUrl);
 
             if (data.chart && data.chart.result && data.chart.result.length > 0) {
                 const result = data.chart.result[0];
