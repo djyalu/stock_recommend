@@ -278,9 +278,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+
     const investorGrid = document.getElementById('investorGrid');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const stockInput = document.getElementById('stockInput');
+    const autocompleteList = document.getElementById('autocompleteList');
     const resultsSection = document.getElementById('resultsSection');
     const resultsGrid = document.getElementById('resultsGrid');
     const stockSummary = document.getElementById('stockSummary');
@@ -289,6 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedInvestors = new Set();
 
     let currentLang = 'ko';
+    let currentFocus = -1;
+    let debounceTimer;
 
     // UI Elements for Translation
     const uiElements = {
@@ -367,6 +371,102 @@ document.addEventListener('DOMContentLoaded', () => {
             investorGrid.appendChild(card);
         });
     }
+
+    // --- Autocomplete Functionality ---
+
+    function closeAllLists() {
+        autocompleteList.innerHTML = '';
+        currentFocus = -1;
+    }
+
+    async function showAutocomplete(query) {
+        closeAllLists();
+
+        if (!query || query.length < 1) {
+            return;
+        }
+
+        try {
+            const targetUrl = `${BASE_URL}/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0`;
+            const data = await fetchWithProxy(targetUrl);
+
+            if (data.quotes && data.quotes.length > 0) {
+                data.quotes.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `
+                        <span class="item-symbol">${item.symbol}</span>
+                        <span class="item-name">${item.shortname || item.longname || ''}</span>
+                        <span class="item-exch">${item.exchDisp || item.exchange || ''}</span>
+                    `;
+
+                    div.addEventListener('click', () => {
+                        stockInput.value = item.symbol;
+                        closeAllLists();
+                    });
+
+                    autocompleteList.appendChild(div);
+                });
+            }
+        } catch (error) {
+            console.error('Autocomplete error:', error);
+        }
+    }
+
+    // Input event with debouncing
+    stockInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            showAutocomplete(e.target.value);
+        }, 300);
+    });
+
+    // Keyboard navigation
+    stockInput.addEventListener('keydown', (e) => {
+        const items = autocompleteList.getElementsByClassName('autocomplete-item');
+
+        if (e.keyCode === 40) { // Down arrow
+            currentFocus++;
+            addActive(items);
+            e.preventDefault();
+        } else if (e.keyCode === 38) { // Up arrow
+            currentFocus--;
+            addActive(items);
+            e.preventDefault();
+        } else if (e.keyCode === 13) { // Enter
+            e.preventDefault();
+            if (currentFocus > -1 && items[currentFocus]) {
+                items[currentFocus].click();
+            } else {
+                analyzeBtn.click();
+            }
+        } else if (e.keyCode === 27) { // Escape
+            closeAllLists();
+        }
+    });
+
+    function addActive(items) {
+        if (!items || items.length === 0) return;
+        removeActive(items);
+
+        if (currentFocus >= items.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = items.length - 1;
+
+        items[currentFocus].classList.add('autocomplete-active');
+    }
+
+    function removeActive(items) {
+        for (let i = 0; i < items.length; i++) {
+            items[i].classList.remove('autocomplete-active');
+        }
+    }
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', (e) => {
+        if (e.target !== stockInput) {
+            closeAllLists();
+        }
+    });
 
     // --- Yahoo Finance API Integration ---
 

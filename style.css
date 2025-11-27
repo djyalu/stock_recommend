@@ -458,3 +458,72 @@ h2 {
 .hidden {
     display: none;
 }
+
+/* Autocomplete Styles */
+.input-wrapper {
+    position: relative;
+    flex-grow: 1;
+}
+
+.autocomplete-items {
+    position: absolute;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: none;
+    z-index: 99;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+    background-color: var(--card-bg);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.autocomplete-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-primary);
+    text-align: left;
+    transition: background-color 0.2s;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.autocomplete-active {
+    background-color: var(--primary-color) !important;
+    color: #ffffff;
+}
+
+.item-symbol {
+    font-weight: bold;
+    margin-right: 10px;
+    color: var(--primary-color);
+}
+
+.item-name {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.item-exch {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-left: auto;
+    padding-left: 10px;
+}

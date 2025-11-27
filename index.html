@@ -26,7 +26,11 @@
             <p id="subTitle" class="subtitle">Get investment wisdom from the world's greatest masters.</p>
 
             <div class="search-container">
-                <input type="text" id="stockInput" placeholder="Enter stock name (e.g., Tesla, Samsung)...">
+                <div class="input-wrapper">
+                    <input type="text" id="stockInput" placeholder="Enter stock name (e.g., Tesla, Samsung)..."
+                        autocomplete="off">
+                    <div id="autocompleteList" class="autocomplete-items"></div>
+                </div>
                 <button id="analyzeBtn" class="primary-btn">Get Advice</button>
             </div>
         </div>
