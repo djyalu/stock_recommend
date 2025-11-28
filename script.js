@@ -282,6 +282,18 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         alertInvestor: {
             en: "Please select at least one investor.", ko: "최소 한 명의 고수를 선택해주세요.", ja: "少なくとも1人の達人を選択してください。", zh: "请至少选择一位大师。", es: "Por favor, selecciona al menos un inversor."
+        },
+        newsSummaryTitle: {
+            en: "AI News Briefing", ko: "AI 뉴스 브리핑", ja: "AIニュースブリーフィング", zh: "AI新闻简报", es: "Resumen de Noticias AI"
+        },
+        newsPositive: {
+            en: "Positive sentiment dominates recent news.", ko: "최근 뉴스에서 긍정적인 분위기가 감지됩니다.", ja: "最近のニュースでは肯定的な雰囲気が優勢です。", zh: "近期新闻以正面情绪为主。", es: "El sentimiento positivo domina las noticias recientes."
+        },
+        newsNegative: {
+            en: "Negative sentiment dominates recent news.", ko: "최근 뉴스에서 부정적인 분위기가 감지됩니다.", ja: "最近のニュースでは否定的な雰囲気が優勢です。", zh: "近期新闻以负面情绪为主。", es: "El sentimiento negativo domina las noticias recientes."
+        },
+        newsNeutral: {
+            en: "Recent news shows mixed or neutral sentiment.", ko: "최근 뉴스는 중립적이거나 엇갈린 반응을 보입니다.", ja: "最近のニュースは中立的またはまちまちです。", zh: "近期新闻显示混合或中立情绪。", es: "Las noticias recientes muestran un sentimiento mixto o neutral."
         }
     };
 
@@ -733,8 +745,63 @@ document.addEventListener('DOMContentLoaded', () => {
         sentimentText.textContent = sentimentLabel;
     }
 
+    function analyzeNewsSentiment(newsItems) {
+        let score = 0;
+        const positiveKeywords = ['rise', 'jump', 'gain', 'bull', 'high', 'record', 'profit', 'beat', 'growth', 'surge', 'up'];
+        const negativeKeywords = ['fall', 'drop', 'loss', 'bear', 'low', 'miss', 'crash', 'risk', 'down', 'decline', 'weak'];
+
+        let foundKeywords = new Set();
+
+        newsItems.forEach(item => {
+            const text = (item.headline + " " + item.summary).toLowerCase();
+
+            positiveKeywords.forEach(word => {
+                if (text.includes(word)) {
+                    score++;
+                    foundKeywords.add(word);
+                }
+            });
+
+            negativeKeywords.forEach(word => {
+                if (text.includes(word)) {
+                    score--;
+                    foundKeywords.add(word);
+                }
+            });
+        });
+
+        let sentimentKey = 'newsNeutral';
+        if (score > 1) sentimentKey = 'newsPositive';
+        if (score < -1) sentimentKey = 'newsNegative';
+
+        return {
+            key: sentimentKey,
+            keywords: Array.from(foundKeywords).slice(0, 3).join(', ')
+        };
+    }
+
     function renderNews(newsItems) {
         newsGrid.innerHTML = '';
+
+        // Add AI News Briefing
+        if (newsItems.length > 0) {
+            const analysis = analyzeNewsSentiment(newsItems);
+            const summaryBox = document.createElement('div');
+            summaryBox.className = 'news-summary-box';
+
+            const title = translations.newsSummaryTitle[currentLang];
+            const sentimentText = translations[analysis.key][currentLang];
+
+            summaryBox.innerHTML = `
+                <div class="summary-title">🤖 ${title}</div>
+                <div class="summary-content">
+                    ${sentimentText}
+                    ${analysis.keywords ? `<br><span class="summary-keywords">Keywords: ${analysis.keywords}</span>` : ''}
+                </div>
+            `;
+            newsGrid.appendChild(summaryBox);
+        }
+
         newsItems.forEach(item => {
             const card = document.createElement('div');
             card.className = 'news-card';
