@@ -301,42 +301,6 @@ h2 {
 /* Investor Grid */
 .investor-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 2rem;
-    margin-bottom: 4rem;
-}
-
-.investor-card {
-    background: var(--card-bg);
-    border: var(--glass-border);
-    border-radius: 16px;
-    padding: 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.investor-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--secondary-color);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-.investor-card.selected {
-    border-color: var(--primary-color);
-    background: rgba(0, 230, 118, 0.05);
-    box-shadow: 0 0 20px rgba(0, 230, 118, 0.2);
-}
-
-.investor-card img {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-bottom: 1rem;
-    border: 2px solid var(--text-muted);
     transition: border-color 0.3s;
 }
 
