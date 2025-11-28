@@ -548,16 +548,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const changePercent = (change / previousClose) * 100;
                 const volume = quote.volume[quote.volume.length - 1] || 0;
 
-                // Simulated fundamentals (Yahoo Chart API doesn't provide PER/ROE freely/easily in one call)
-                // We will generate realistic-looking fundamentals based on the price to keep the app functional
-                // while using REAL price data.
+                // Synthesized fundamentals for the Guru logic
                 return {
                     ticker: meta.symbol,
                     price: currentPrice,
                     change: change,
                     changePercent: changePercent,
                     volume: volume,
-                    // Synthesized fundamentals for the Guru logic
                     per: Math.abs(currentPrice / (Math.random() * 10 + 1)),
                     pbr: Math.random() * 5 + 1,
                     roe: Math.random() * 20 + 5,
@@ -606,17 +603,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = searchResult.shortname || searchResult.longname || symbol;
 
             // 2. Fetch Real Data
-            let realData = null;
-            try {
-                realData = await fetchStockData(symbol);
-            } catch (e) {
-                console.error("Stock data fetch failed:", e);
-                alert(`Failed to fetch stock data for ${symbol}. Please try again.`);
-                return;
-            }
+            const realData = await fetchStockData(symbol);
 
             if (!realData) {
-                alert(`Failed to load data for ${symbol}`);
+                alert(`Failed to load data for ${symbol}. Please try again.`);
                 analyzeBtn.textContent = originalBtnText;
                 analyzeBtn.disabled = false;
                 return;
@@ -656,8 +646,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 newsSection.classList.remove('hidden');
             } catch (newsErr) {
                 console.warn("News fetch failed, but continuing:", newsErr);
-                // Optionally hide news section or show error in news section
-                // newsSection.classList.add('hidden'); 
             }
 
         } catch (err) {
@@ -1113,5 +1101,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     updateLanguage();
     console.log('Stock Guru: Initialization complete.');
-});
+
 
