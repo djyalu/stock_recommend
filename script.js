@@ -606,7 +606,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = searchResult.shortname || searchResult.longname || symbol;
 
             // 2. Fetch Real Data
-            const realData = await fetchStockData(symbol);
+            let realData = null;
+            try {
+                realData = await fetchStockData(symbol);
+            } catch (e) {
+                console.error("Stock data fetch failed:", e);
+                alert(`Failed to fetch stock data for ${symbol}. Please try again.`);
+                return;
+            }
 
             if (!realData) {
                 alert(`Failed to load data for ${symbol}`);
@@ -631,25 +638,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 sentiment: realData.sentiment
             };
 
-
-            const newsData = await fetchRealNews(symbol); // Fetch real news from Yahoo Finance
-
-            // 3. Render
+            // 3. Render Stock Summary & Advice (Prioritize these)
             renderStockSummary(stockData);
             generateAdvice(name, stockData);
-            renderNews(newsData);
 
-            // Show Sections
+            // Show Sections immediately
             resultsSection.style.display = 'block';
             stockSummary.classList.remove('hidden');
-            newsSection.classList.remove('hidden');
 
-            // Scroll
+            // Scroll to summary
             stockSummary.scrollIntoView({ behavior: 'smooth' });
 
+            // 4. Fetch News (Non-blocking)
+            try {
+                const newsData = await fetchRealNews(symbol);
+                renderNews(newsData);
+                newsSection.classList.remove('hidden');
+            } catch (newsErr) {
+                console.warn("News fetch failed, but continuing:", newsErr);
+                // Optionally hide news section or show error in news section
+                // newsSection.classList.add('hidden'); 
+            }
+
         } catch (err) {
-            console.error(err);
-            alert("An error occurred while fetching data.");
+            console.error("Critical Error:", err);
+            alert(`An error occurred: ${err.message || "Unknown error"}`);
         } finally {
             analyzeBtn.textContent = originalBtnText;
             analyzeBtn.disabled = false;
