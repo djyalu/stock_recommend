@@ -1,0 +1,5 @@
+node_modules/
+assets_original_backup/
+package-lock.json
+*.log
+.DS_Store

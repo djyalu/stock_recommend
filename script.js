@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const investors = [
         {
             id: 'buffett',
-            image: 'assets/Warren%20Buffett%20-%20The%20Oracle%20of%20Omaha.png',
+            image: 'assets/Warren%20Buffett%20-%20The%20Oracle%20of%20Omaha.webp',
             name: {
                 en: 'Warren Buffett', ko: '워렌 버핏', ja: 'ウォーレン・バフェット', zh: '沃伦·巴菲特', es: 'Warren Buffett'
             },
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'lynch',
-            image: 'assets/Peter%20Lynch%20-%20The%20Chameleon.png',
+            image: 'assets/Peter%20Lynch%20-%20The%20Chameleon.webp',
             name: {
                 en: 'Peter Lynch', ko: '피터 린치', ja: 'ピーター・リンチ', zh: '彼得·林奇', es: 'Peter Lynch'
             },
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'dalio',
-            image: 'assets/Ray%20Dalio%20-%20The%20Macro%20Master.png',
+            image: 'assets/Ray%20Dalio%20-%20The%20Macro%20Master.webp',
             name: {
                 en: 'Ray Dalio', ko: '레이 달리오', ja: 'レイ・ダリオ', zh: '雷·达里奥', es: 'Ray Dalio'
             },
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'soros',
-            image: 'assets/George%20Soros%20-%20The%20Man%20Who%20Broke%20the%20Bank.png',
+            image: 'assets/George%20Soros%20-%20The%20Man%20Who%20Broke%20the%20Bank.webp',
             name: {
                 en: 'George Soros', ko: '조지 소로스', ja: 'ジョージ・ソロス', zh: '乔治·索罗斯', es: 'George Soros'
             },
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'munger',
-            image: 'assets/Charlie%20Munger%20-%20The%20Architect.png',
+            image: 'assets/Charlie%20Munger%20-%20The%20Architect.webp',
             name: {
                 en: 'Charlie Munger', ko: '찰리 멍거', ja: 'チャーリー・マンガー', zh: '查理·芒格', es: 'Charlie Munger'
             },
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'graham',
-            image: 'assets/Benjamin%20Graham%20-%20The%20Father%20of%20Value%20Investing.png',
+            image: 'assets/Benjamin%20Graham%20-%20The%20Father%20of%20Value%20Investing.webp',
             name: {
                 en: 'Benjamin Graham', ko: '벤자민 그레이엄', ja: 'ベンジャミン・グレアム', zh: '本杰明·格雷厄姆', es: 'Benjamin Graham'
             },
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'wood',
-            image: 'assets/Cathie%20Wood%20-%20The%20Innovation%20Evangelist.png',
+            image: 'assets/Cathie%20Wood%20-%20The%20Innovation%20Evangelist.webp',
             name: {
                 en: 'Cathie Wood', ko: '캐시 우드', ja: 'キャシー・ウッド', zh: '凯西·伍德', es: 'Cathie Wood'
             },
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'icahn',
-            image: 'assets/Carl%20Icahn%20-%20The%20Corporate%20Raider.png',
+            image: 'assets/Carl%20Icahn%20-%20The%20Corporate%20Raider.webp',
             name: {
                 en: 'Carl Icahn', ko: '칼 아이칸', ja: 'カール・アイカーン', zh: '卡尔·伊坎', es: 'Carl Icahn'
             },
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'ackman',
-            image: 'assets/Bill%20Ackman%20-%20The%20Activist.png',
+            image: 'assets/Bill%20Ackman%20-%20The%20Activist.webp',
             name: {
                 en: 'Bill Ackman', ko: '빌 애크먼', ja: 'ビル・アックマン', zh: '比尔·阿克曼', es: 'Bill Ackman'
             },
@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'simons',
-            image: 'assets/Jim%20Simons%20-%20The%20Quant%20King.png',
+            image: 'assets/Jim%20Simons%20-%20The%20Quant%20King.webp',
             name: {
                 en: 'Jim Simons', ko: '짐 사이먼스', ja: 'ジム・シモンズ', zh: '吉姆·西蒙斯', es: 'Jim Simons'
             },
@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const title = investor.title[currentLang] || investor.title['en'];
 
             card.innerHTML = `
-                <img src="${investor.image}" alt="${name}" onerror="this.src='https://via.placeholder.com/100/333/fff?text=${name.charAt(0)}'">
+                <img src="${investor.image}" alt="${name}" loading="lazy" onerror="this.src='https://via.placeholder.com/100/333/fff?text=${name.charAt(0)}'">
                 <h3>${name}</h3>
                 <p>${title}</p>
             `;
@@ -990,3 +990,4 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLanguage();
     console.log('Stock Guru: Initialization complete.');
 });
+
