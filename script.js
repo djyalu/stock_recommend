@@ -666,36 +666,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (num >= 1000) {
             return (num / 1000).toFixed(1) + 'K';
         }
-        return num.toString();
-    }
-
-    // Fetch real news from Yahoo Finance
-    async function fetchRealNews(symbol) {
-        try {
-            const targetUrl = `${BASE_URL}/v1/finance/search?q=${encodeURIComponent(symbol)}&quotesCount=1&newsCount=5`;
-            const data = await fetchWithProxy(targetUrl);
-
-            if (data.news && data.news.length > 0) {
-                return data.news.slice(0, 3).map(item => ({
-                    source: item.publisher || 'Yahoo Finance',
-                    headline: item.title || 'No title',
-                    summary: item.summary || item.title || 'Click to read more...',
-                    date: new Date(item.providerPublishTime * 1000).toLocaleDateString(),
-                    url: item.link || `https://finance.yahoo.com/quote/${symbol}`
-                }));
-            }
-
-            // Fallback to mock news if no real news available
-            return generateMockNews(symbol);
-        } catch (error) {
-            console.error('News fetch error:', error);
-            return generateMockNews(symbol);
-        }
-    }
-
-    // Keep mock news generator as fallback
-    function generateMockNews(stockName) {
-        const sources = ['Yahoo Finance', 'Bloomberg', 'Reuters', 'CNBC'];
         const newsItems = [];
 
         for (let i = 0; i < 3; i++) {
