@@ -270,6 +270,13 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsTitle: {
             en: "The Verdict", ko: "판결", ja: "評決", zh: "结论", es: "El Veredicto"
         },
+        disclaimer: {
+            en: "⚠️ (Notice) The investment experts on this site are AI-generated virtual characters, and information provided through advice may not reflect reality. Use of AI-generated results is at the user's own responsibility.",
+            ko: "⚠️ (주의사항) 본 사이트의 고수(인물)는 AI로 생성한 가상의 인물이며 조언 얻기를 통해 제공되는 정보는 사실과 다를 수 있음을 알려 드립니다. AI가 제공하는 결과의 활용여부는 사용자의 책임임을 주의하여 주시기 바랍니다.",
+            ja: "⚠️ (注意) 当サイトに登場する投資家はAIにより生成された架空の人物であり、アドバイスで提供される情報は事実と異なる場合があります。AI生成結果の利用はユーザーの責任となりますのでご注意ください。",
+            zh: "⚠️ (注意) 本网站的投资专家是AI生成的虚拟人物，通过建议提供的信息可能与事实不符。使用AI生成结果的责任由用户自负，请注意。",
+            es: "⚠️ (Aviso) Los expertos de inversión en este sitio son personajes virtuales generados por IA, y la información proporcionada puede no reflejar la realidad. El uso de resultados de IA es responsabilidad del usuario."
+        },
         alertStock: {
             en: "Please enter a stock name.", ko: "종목명을 입력해주세요.", ja: "銘柄名を入力してください。", zh: "请输入股票名称。", es: "Por favor, introduce un nombre de acción."
         },
@@ -301,7 +308,8 @@ document.addEventListener('DOMContentLoaded', () => {
         stockInput: document.getElementById('stockInput'),
         analyzeBtn: document.getElementById('analyzeBtn'),
         selectTitle: document.getElementById('selectTitle'),
-        resultsTitle: document.getElementById('resultsTitle')
+        resultsTitle: document.getElementById('resultsTitle'),
+        disclaimer: document.getElementById('disclaimer')
     };
 
     // Language Toggle
@@ -325,6 +333,9 @@ document.addEventListener('DOMContentLoaded', () => {
         uiElements.analyzeBtn.textContent = translations.analyzeBtn[currentLang];
         uiElements.selectTitle.textContent = translations.selectTitle[currentLang];
         uiElements.resultsTitle.textContent = translations.resultsTitle[currentLang];
+        if (uiElements.disclaimer) {
+            uiElements.disclaimer.textContent = translations.disclaimer[currentLang];
+        }
 
         renderInvestors();
 
@@ -833,6 +844,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     adviceText = adviceFunc(stock);
                 }
 
+                // Generate rationale based on investor's focus
+                let rationale = '';
+                if (id === 'buffett') {
+                    rationale = `ROE: ${data.roe.toFixed(1)}% | P/E: ${data.per.toFixed(1)} | Debt/Equity: ${data.debtToEquity.toFixed(1)}`;
+                } else if (id === 'wood') {
+                    rationale = `Revenue Growth: ${data.revenueGrowth.toFixed(1)}%`;
+                } else if (id === 'lynch') {
+                    rationale = `P/E: ${data.per.toFixed(1)} | Revenue Growth: ${data.revenueGrowth.toFixed(1)}%`;
+                } else if (id === 'graham') {
+                    rationale = `P/B: ${data.pbr.toFixed(2)} | P/E: ${data.per.toFixed(1)}`;
+                } else if (id === 'dalio') {
+                    rationale = `Sentiment: ${(data.sentiment * 100).toFixed(0)}%`;
+                } else if (id === 'soros') {
+                    rationale = `Price Change: ${data.changePercent}%`;
+                } else if (id === 'munger') {
+                    rationale = `ROE: ${data.roe.toFixed(1)}% | Debt/Equity: ${data.debtToEquity.toFixed(1)}`;
+                } else if (id === 'icahn') {
+                    rationale = `ROE: ${data.roe.toFixed(1)}%`;
+                } else if (id === 'ackman') {
+                    rationale = `Revenue Growth: ${data.revenueGrowth.toFixed(1)}% | P/E: ${data.per.toFixed(1)}`;
+                } else if (id === 'simons') {
+                    rationale = `Volume: ${data.volume} | Price Change: ${data.changePercent}%`;
+                }
+
+                const rationaleLabel = {
+                    en: 'Analysis Basis',
+                    ko: '분석 근거',
+                    ja: '分析根拠',
+                    zh: '分析依据',
+                    es: 'Base de análisis'
+                }[currentLang];
+
                 const adviceCard = document.createElement('div');
                 adviceCard.className = 'advice-card';
                 adviceCard.innerHTML = `
@@ -846,6 +889,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="advice-content">
                         "${adviceText}"
                     </div>
+                    ${rationale ? `<div class="advice-rationale"><strong>${rationaleLabel}:</strong> ${rationale}</div>` : ''}
                 `;
                 resultsGrid.appendChild(adviceCard);
             }
