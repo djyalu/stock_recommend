@@ -310,6 +310,48 @@ document.addEventListener('DOMContentLoaded', () => {
             ja: "⚠️ 本サービスは教育・娯楽目的のみで提供されます。投資判断はご自身の責任です。", 
             zh: "⚠️ 本服务仅供教育和娱乐目的。投资决策由您自己负责。", 
             es: "⚠️ Este servicio es solo para fines educativos y de entretenimiento. Las decisiones de inversión son su responsabilidad."
+        },
+        settingsTitle: {
+            en: "⚙️ Settings", ko: "⚙️ 설정", ja: "⚙️ 設定", zh: "⚙️ 设置", es: "⚙️ Configuración"
+        },
+        apiKeyLabel: {
+            en: "Financial Modeling Prep API Key", ko: "Financial Modeling Prep API 키", ja: "Financial Modeling Prep APIキー", zh: "Financial Modeling Prep API密钥", es: "Clave API de Financial Modeling Prep"
+        },
+        apiKeyDesc: {
+            en: "To get real financial data (P/E, ROE, etc.), you need a free API key.", 
+            ko: "실제 재무 데이터(PER, ROE 등)를 가져오려면 무료 API 키가 필요합니다.", 
+            ja: "実際の財務データ（PER、ROEなど）を取得するには、無料のAPIキーが必要です。", 
+            zh: "要获取真实的财务数据（市盈率、ROE等），您需要一个免费的API密钥。", 
+            es: "Para obtener datos financieros reales (PER, ROE, etc.), necesita una clave API gratuita."
+        },
+        getApiKey: {
+            en: "🔑 Get free API key", ko: "🔑 무료 API 키 발급받기", ja: "🔑 無料APIキーを取得", zh: "🔑 获取免费API密钥", es: "🔑 Obtener clave API gratis"
+        },
+        dataStatusLabel: {
+            en: "Data Status:", ko: "데이터 상태:", ja: "データ状態:", zh: "数据状态:", es: "Estado de datos:"
+        },
+        simulation: {
+            en: "📊 Simulation", ko: "📊 시뮬레이션", ja: "📊 シミュレーション", zh: "📊 模拟", es: "📊 Simulación"
+        },
+        realData: {
+            en: "✅ Real Data", ko: "✅ 실제 데이터", ja: "✅ 実データ", zh: "✅ 真实数据", es: "✅ Datos Reales"
+        },
+        save: {
+            en: "Save", ko: "저장", ja: "保存", zh: "保存", es: "Guardar"
+        },
+        apiKeySaved: {
+            en: "API key saved! Real financial data will be used.", 
+            ko: "API 키가 저장되었습니다! 실제 재무 데이터가 사용됩니다.", 
+            ja: "APIキーが保存されました！実際の財務データが使用されます。", 
+            zh: "API密钥已保存！将使用真实的财务数据。", 
+            es: "¡Clave API guardada! Se usarán datos financieros reales."
+        },
+        apiKeyCleared: {
+            en: "API key cleared. Simulation data will be used.", 
+            ko: "API 키가 삭제되었습니다. 시뮬레이션 데이터가 사용됩니다.", 
+            ja: "APIキーがクリアされました。シミュレーションデータが使用されます。", 
+            zh: "API密钥已清除。将使用模拟数据。", 
+            es: "Clave API eliminada. Se usarán datos de simulación."
         }
     };
 
@@ -328,6 +370,143 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentLang = 'ko';
     let currentFocus = -1;
     let debounceTimer;
+    let isRealData = false;
+
+    // ========== Financial Modeling Prep API ==========
+    const FMP_BASE_URL = 'https://financialmodelingprep.com/api/v3';
+
+    function getFmpApiKey() {
+        return localStorage.getItem('fmp_api_key') || '';
+    }
+
+    function setFmpApiKey(key) {
+        if (key) {
+            localStorage.setItem('fmp_api_key', key);
+        } else {
+            localStorage.removeItem('fmp_api_key');
+        }
+        updateDataStatus();
+    }
+
+    function updateDataStatus() {
+        const hasKey = !!getFmpApiKey();
+        isRealData = hasKey;
+
+        const statusValue = document.getElementById('dataStatusValue');
+        const dataBadge = document.getElementById('dataSourceBadge');
+
+        if (statusValue) {
+            statusValue.textContent = hasKey ? translations.realData[currentLang] : translations.simulation[currentLang];
+            statusValue.className = `status-badge ${hasKey ? 'real' : 'simulation'}`;
+        }
+
+        if (dataBadge) {
+            dataBadge.textContent = hasKey ? translations.realData[currentLang] : translations.simulation[currentLang];
+            dataBadge.className = `data-badge ${hasKey ? 'real' : 'simulation'}`;
+        }
+    }
+
+    async function fetchFmpData(symbol) {
+        const apiKey = getFmpApiKey();
+        if (!apiKey) return null;
+
+        try {
+            // Fetch key metrics (ratios)
+            const ratiosUrl = `${FMP_BASE_URL}/ratios-ttm/${symbol}?apikey=${apiKey}`;
+            const quoteUrl = `${FMP_BASE_URL}/quote/${symbol}?apikey=${apiKey}`;
+
+            const [ratiosRes, quoteRes] = await Promise.all([
+                fetch(ratiosUrl),
+                fetch(quoteUrl)
+            ]);
+
+            if (!ratiosRes.ok || !quoteRes.ok) {
+                console.warn('FMP API request failed');
+                return null;
+            }
+
+            const ratiosData = await ratiosRes.json();
+            const quoteData = await quoteRes.json();
+
+            if (!ratiosData || ratiosData.length === 0 || !quoteData || quoteData.length === 0) {
+                return null;
+            }
+
+            const ratios = ratiosData[0];
+            const quote = quoteData[0];
+
+            return {
+                per: ratios.peRatioTTM || 0,
+                pbr: ratios.priceToBookRatioTTM || 0,
+                roe: (ratios.returnOnEquityTTM || 0) * 100,
+                debtToEquity: (ratios.debtEquityRatioTTM || 0) * 100,
+                revenueGrowth: (ratios.revenueGrowth || quote.eps / (quote.priceAvg50 || 1)) * 100,
+                dividendYield: (ratios.dividendYieldTTM || 0) * 100,
+                currentRatio: ratios.currentRatioTTM || 0,
+                eps: quote.eps || 0,
+                marketCap: quote.marketCap || 0
+            };
+        } catch (error) {
+            console.error('FMP API error:', error);
+            return null;
+        }
+    }
+
+    // ========== Settings Modal ==========
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeModalBtn = document.getElementById('closeModal');
+    const saveApiKeyBtn = document.getElementById('saveApiKey');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const toggleApiKeyBtn = document.getElementById('toggleApiKey');
+
+    if (settingsBtn && settingsModal) {
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+            apiKeyInput.value = getFmpApiKey();
+            updateSettingsTranslations();
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            settingsModal.classList.add('hidden');
+        });
+
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                settingsModal.classList.add('hidden');
+            }
+        });
+
+        saveApiKeyBtn.addEventListener('click', () => {
+            const key = apiKeyInput.value.trim();
+            setFmpApiKey(key);
+            settingsModal.classList.add('hidden');
+
+            const message = key ? translations.apiKeySaved[currentLang] : translations.apiKeyCleared[currentLang];
+            alert(message);
+        });
+
+        toggleApiKeyBtn.addEventListener('click', () => {
+            apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
+        });
+    }
+
+    function updateSettingsTranslations() {
+        const settingsTitle = document.getElementById('settingsTitle');
+        const apiKeyLabel = document.getElementById('apiKeyLabel');
+        const apiKeyDesc = document.getElementById('apiKeyDesc');
+        const getApiKeyLink = document.getElementById('getApiKeyLink');
+        const dataStatusLabel = document.getElementById('dataStatusLabel');
+
+        if (settingsTitle) settingsTitle.textContent = translations.settingsTitle[currentLang];
+        if (apiKeyLabel) apiKeyLabel.textContent = translations.apiKeyLabel[currentLang];
+        if (apiKeyDesc) apiKeyDesc.textContent = translations.apiKeyDesc[currentLang];
+        if (getApiKeyLink) getApiKeyLink.textContent = translations.getApiKey[currentLang];
+        if (dataStatusLabel) dataStatusLabel.textContent = translations.dataStatusLabel[currentLang];
+        if (saveApiKeyBtn) saveApiKeyBtn.textContent = translations.save[currentLang];
+
+        updateDataStatus();
+    }
 
     // UI Elements for Translation
     const uiElements = {
@@ -402,6 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (uiElements.footerDisclaimer) {
             uiElements.footerDisclaimer.textContent = translations.footerDisclaimer[currentLang];
         }
+
+        // Update settings modal translations
+        updateSettingsTranslations();
 
         renderInvestors();
 
@@ -603,19 +785,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 const changePercent = (change / previousClose) * 100;
                 const volume = quote.volume[quote.volume.length - 1] || 0;
 
-                // Synthesized fundamentals for the Guru logic
+                // Try to get real financial data from FMP API
+                const fmpData = await fetchFmpData(ticker);
+                isRealData = !!fmpData;
+
+                // Use real data if available, otherwise use simulation
+                let financialData;
+                if (fmpData) {
+                    financialData = {
+                        per: fmpData.per || 15,
+                        pbr: fmpData.pbr || 2,
+                        roe: fmpData.roe || 10,
+                        debtToEquity: fmpData.debtToEquity || 50,
+                        revenueGrowth: fmpData.revenueGrowth || 10,
+                        dividendYield: fmpData.dividendYield || 0,
+                        eps: fmpData.eps || 0,
+                        marketCap: fmpData.marketCap || 0
+                    };
+                    console.log('Using REAL financial data from FMP API');
+                } else {
+                    // Simulation data (fallback)
+                    financialData = {
+                        per: Math.abs(currentPrice / (Math.random() * 10 + 1)),
+                        pbr: Math.random() * 5 + 1,
+                        roe: Math.random() * 20 + 5,
+                        debtToEquity: Math.random() * 100,
+                        revenueGrowth: Math.random() * 20,
+                        dividendYield: Math.random() * 3,
+                        eps: currentPrice / (Math.random() * 20 + 5),
+                        marketCap: 0
+                    };
+                    console.log('Using SIMULATION financial data');
+                }
+
+                // Update data source badge
+                updateDataStatus();
+
                 return {
                     ticker: meta.symbol,
                     price: currentPrice,
                     change: change,
                     changePercent: changePercent,
                     volume: volume,
-                    per: Math.abs(currentPrice / (Math.random() * 10 + 1)),
-                    pbr: Math.random() * 5 + 1,
-                    roe: Math.random() * 20 + 5,
-                    debtToEquity: Math.random() * 100,
-                    revenueGrowth: Math.random() * 20,
-                    sentiment: changePercent > 0 ? 0.6 + (Math.random() * 0.3) : 0.4 - (Math.random() * 0.3)
+                    ...financialData,
+                    sentiment: changePercent > 0 ? 0.6 + (Math.random() * 0.3) : 0.4 - (Math.random() * 0.3),
+                    isRealData: isRealData
                 };
             }
             return null;
@@ -1180,6 +1394,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Stock Guru: Initializing...');
     // Initialize
     updateLanguage();
+    updateDataStatus();
     console.log('Stock Guru: Initialization complete.');
 });
 
