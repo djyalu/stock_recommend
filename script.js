@@ -1169,6 +1169,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.revenueGrowth > 20) {
                         adviceText = getLocalizedMessage('wood_buy', stock);
                         adviceSentiment = "positive";
+                    } else if (data.revenueGrowth > 10) {
+                        adviceText = getLocalizedMessage('wood_watch', stock);
+                        adviceSentiment = "neutral";
                     } else {
                         adviceText = getLocalizedMessage('wood_sell', stock);
                         adviceSentiment = "negative";
@@ -1177,6 +1180,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.per < 25 && data.revenueGrowth > 10) {
                         adviceText = getLocalizedMessage('lynch_buy', stock);
                         adviceSentiment = "positive";
+                    } else if (data.per < 35 || data.revenueGrowth > 5) {
+                        adviceText = getLocalizedMessage('lynch_watch', stock);
+                        adviceSentiment = "neutral";
                     } else {
                         adviceText = getLocalizedMessage('lynch_avoid', stock);
                         adviceSentiment = "negative";
@@ -1185,6 +1191,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.pbr < 1.5 && data.per < 15) {
                         adviceText = getLocalizedMessage('graham_buy', stock);
                         adviceSentiment = "positive";
+                    } else if (data.pbr < 2.5 || data.per < 25) {
+                        adviceText = getLocalizedMessage('graham_watch', stock);
+                        adviceSentiment = "neutral";
                     } else {
                         adviceText = getLocalizedMessage('graham_expensive', stock);
                         adviceSentiment = "negative";
@@ -1212,6 +1221,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.roe > 20 && data.debtToEquity < 30) {
                         adviceText = getLocalizedMessage('munger_buy', stock);
                         adviceSentiment = "positive";
+                    } else if (data.roe > 12 && data.debtToEquity < 80) {
+                        adviceText = getLocalizedMessage('munger_watch', stock);
+                        adviceSentiment = "neutral";
                     } else {
                         adviceText = getLocalizedMessage('munger_pass', stock);
                         adviceSentiment = "negative";
@@ -1230,6 +1242,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.revenueGrowth > 10 && data.per < 30) {
                         adviceText = getLocalizedMessage('ackman_buy', stock);
                         adviceSentiment = "positive";
+                    } else if (data.revenueGrowth > 5 || data.per < 40) {
+                        adviceText = getLocalizedMessage('ackman_watch', stock);
+                        adviceSentiment = "neutral";
                     } else {
                         adviceText = getLocalizedMessage('ackman_pass', stock);
                         adviceSentiment = "negative";
@@ -1290,6 +1305,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.pbr < 1.0 && data.per < 12) {
                         adviceText = getLocalizedMessage('klarman_buy', stock);
                         adviceSentiment = "positive";
+                    } else if (data.pbr < 2.0 && data.per < 20) {
+                        adviceText = getLocalizedMessage('klarman_watch', stock);
+                        adviceSentiment = "neutral";
                     } else {
                         adviceText = getLocalizedMessage('klarman_pass', stock);
                         adviceSentiment = "negative";
@@ -1354,6 +1372,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.roe > 20 && data.per < 25) {
                         adviceText = getLocalizedMessage('smith_buy', stock);
                         adviceSentiment = "positive";
+                    } else if (data.roe > 12 && data.per < 35) {
+                        adviceText = getLocalizedMessage('smith_watch', stock);
+                        adviceSentiment = "neutral";
                     } else {
                         adviceText = getLocalizedMessage('smith_pass', stock);
                         adviceSentiment = "negative";
@@ -1720,6 +1741,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 zh: `${stock}缺乏我们寻找的创新速度。它是旧世界的一部分。`,
                 es: `${stock} carece de la velocidad de innovación que buscamos. Es parte del viejo mundo.`
             },
+            wood_watch: {
+                en: `${stock} shows moderate growth. Keep it on your radar - could become interesting with more innovation.`,
+                ko: `${stock}은(는) 적당한 성장세를 보이네요. 관심 목록에 넣어두세요 - 혁신이 더해지면 흥미로워질 수 있어요.`,
+                ja: `${stock}は中程度の成長を示しています。注目リストに入れておいてください - より革新的になれば面白くなるかも。`,
+                zh: `${stock}显示出适度增长。保持关注 - 如果更具创新性可能会变得有趣。`,
+                es: `${stock} muestra un crecimiento moderado. Mantenlo en tu radar - podría volverse interesante con más innovación.`
+            },
             lynch_buy: {
                 en: `I see ${stock} everywhere, and the numbers look good. A classic GARP play.`,
                 ko: `어딜 가나 ${stock}이(가) 보이는구만. 숫자도 좋아 보여. 전형적인 GARP(합리적 가격의 성장주) 투자 기회야.`,
@@ -1734,6 +1762,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 zh: `我不明白${stock}怎么赚钱，或者它太贵了。我跳过。`,
                 es: `No entiendo cómo ${stock} gana dinero, o es demasiado caro. Paso.`
             },
+            lynch_watch: {
+                en: `${stock} has some potential. The valuation is reasonable - worth monitoring for a better entry point.`,
+                ko: `${stock}은(는) 잠재력이 있어. 밸류에이션도 괜찮아 - 더 좋은 진입점을 위해 지켜볼 가치가 있네.`,
+                ja: `${stock}には可能性がある。バリュエーションも妥当だ - より良いエントリーポイントを待つ価値がある。`,
+                zh: `${stock}有一些潜力。估值合理 - 值得观察以寻找更好的入场点。`,
+                es: `${stock} tiene potencial. La valoración es razonable - vale la pena monitorear para un mejor punto de entrada.`
+            },
             graham_buy: {
                 en: `${stock} is trading below its intrinsic value. A safe margin of safety here.`,
                 ko: `${stock}은(는) 내재 가치 아래에서 거래되고 있소. 안전 마진이 충분해 보이는군.`,
@@ -1747,6 +1782,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 ja: `ミスター・マーケットは${stock}について楽観的すぎる。この価格では安全域がない。`,
                 zh: `市场先生对${stock}太乐观了。在这个价格下没有安全边际。`,
                 es: `El Sr. Mercado es demasiado optimista sobre ${stock}. No hay margen de seguridad a este precio.`
+            },
+            graham_watch: {
+                en: `${stock}'s valuation is not extreme. Wait for Mr. Market to become more pessimistic for a safer entry.`,
+                ko: `${stock}의 밸류에이션이 극단적이진 않네. 미스터 마켓이 더 비관적이 될 때까지 기다려보게.`,
+                ja: `${stock}のバリュエーションは極端ではない。より安全なエントリーのため、ミスター・マーケットがもっと悲観的になるのを待とう。`,
+                zh: `${stock}的估值不算极端。等待市场先生更加悲观时再入场会更安全。`,
+                es: `La valoración de ${stock} no es extrema. Espera a que el Sr. Mercado sea más pesimista para una entrada más segura.`
             },
             // --- New Gurus ---
             dalio_bear: {
@@ -1791,6 +1833,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 zh: `${stock}不符合我的质量标准。与其买平庸的东西，我宁愿什么都不做。`,
                 es: `${stock} no cumple con mis estándares de calidad. Prefiero no hacer nada que comprar mediocridad.`
             },
+            munger_watch: {
+                en: `${stock} has decent fundamentals, but not outstanding. Keep studying it - great businesses are rare.`,
+                ko: `${stock}의 펀더멘털은 괜찮지만 뛰어나진 않아. 계속 공부해봐 - 훌륭한 기업은 드물거든.`,
+                ja: `${stock}のファンダメンタルズは悪くないが、傑出していない。勉強を続けなさい - 素晴らしいビジネスは稀だ。`,
+                zh: `${stock}的基本面不错，但不够出色。继续研究 - 优秀的企业很罕见。`,
+                es: `${stock} tiene fundamentos decentes, pero no sobresalientes. Sigue estudiándola - los grandes negocios son raros.`
+            },
             icahn_activist: {
                 en: `${stock} is underperforming. The management needs to go. I smell an opportunity to unlock value.`,
                 ko: `${stock}은(는) 성과가 저조해. 경영진은 물러나야 해. 가치를 실현할 기회의 냄새가 나는군.`,
@@ -1818,6 +1867,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 ja: `${stock}は複雑すぎるか、予測不可能だ。私は負けない賭けが好きなんだ。`,
                 zh: `${stock}太复杂或不可预测。我喜欢不会输的赌注。`,
                 es: `${stock} es demasiado complejo o impredecible. Me gustan las apuestas que no puedo perder.`
+            },
+            ackman_watch: {
+                en: `${stock} shows some promise. Let's monitor for clearer cash flow visibility before taking a position.`,
+                ko: `${stock}은(는) 가능성이 보여. 포지션을 취하기 전에 현금흐름이 더 명확해질 때까지 지켜보자.`,
+                ja: `${stock}には可能性がある。ポジションを取る前に、キャッシュフローがより明確になるまで見守ろう。`,
+                zh: `${stock}显示出一些前景。在建仓之前，让我们等待现金流更加清晰。`,
+                es: `${stock} muestra algo de promesa. Monitoreemos para mayor claridad en el flujo de caja antes de tomar posición.`
             },
             simons_algo: {
                 en: `My models detect a statistically significant pattern in ${stock}'s volume and price action. Executing trade.`,
@@ -1921,6 +1977,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 ja: `このレベルでは${stock}に安全域がない。より良い機会を待つ。`,
                 zh: `在这个水平上${stock}没有安全边际。我会等待更好的机会。`,
                 es: `No hay margen de seguridad en ${stock} a estos niveles. Esperaré una mejor oportunidad.`
+            },
+            klarman_watch: {
+                en: `${stock}'s valuation is approaching reasonable levels. Stay patient - true bargains take time.`,
+                ko: `${stock}의 밸류에이션이 합리적인 수준에 가까워지고 있어. 인내심을 가져 - 진정한 저가 매수 기회는 시간이 걸려.`,
+                ja: `${stock}のバリュエーションが妥当なレベルに近づいている。辛抱強く - 本当のバーゲンには時間がかかる。`,
+                zh: `${stock}的估值正在接近合理水平。保持耐心 - 真正的便宜货需要时间。`,
+                es: `La valoración de ${stock} se acerca a niveles razonables. Ten paciencia - las verdaderas gangas toman tiempo.`
             },
             // Burry
             burry_buy: {
@@ -2033,6 +2096,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 ja: `${stock}は私の品質基準を満たしていないか、高すぎる。パスする。`,
                 zh: `${stock}不符合我的质量标准或价格过高。我跳过。`,
                 es: `${stock} no cumple mis estándares de calidad o está sobrevalorado. Paso.`
+            },
+            smith_watch: {
+                en: `${stock} has decent quality but valuation needs monitoring. Good businesses deserve fair prices.`,
+                ko: `${stock}은(는) 품질은 괜찮지만 밸류에이션 모니터링이 필요해. 좋은 기업은 공정한 가격을 받을 자격이 있어.`,
+                ja: `${stock}は品質は良いが、バリュエーションの監視が必要だ。良いビジネスには適正な価格がふさわしい。`,
+                zh: `${stock}质量不错，但估值需要关注。好企业值得公平的价格。`,
+                es: `${stock} tiene calidad decente pero la valoración necesita monitoreo. Los buenos negocios merecen precios justos.`
             },
             // Miller
             miller_buy: {
