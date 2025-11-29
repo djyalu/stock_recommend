@@ -254,35 +254,6 @@ p.subtitle {
     border: var(--glass-border);
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-input[type="text"] {
-    flex-grow: 1;
-    background: transparent;
-    border: none;
-    color: var(--text-color);
-    font-size: 1.1rem;
-    padding: 0.8rem 1.5rem;
-    outline: none;
-}
-
-button.primary-btn {
-    background: var(--accent-gradient);
-    border: none;
-    color: white;
-    padding: 0.8rem 2rem;
-    border-radius: 50px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-button.primary-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(41, 121, 255, 0.4);
 }
 
 /* Main Content */

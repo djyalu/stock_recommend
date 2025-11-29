@@ -497,7 +497,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Using multiple CORS proxies for reliability
     const PROXIES = [
         'https://corsproxy.io/?',
-        'https://api.allorigins.win/raw?url='
+        'https://api.allorigins.win/raw?url=',
+        'https://thingproxy.freeboard.io/fetch/'
     ];
     const BASE_URL = 'https://query1.finance.yahoo.com';
 
@@ -657,6 +658,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    async function fetchRealNews(ticker) {
+        try {
+            // Use the search API to get news for the ticker
+            const targetUrl = `${BASE_URL}/v1/finance/search?q=${ticker}&quotesCount=0&newsCount=5`;
+            const data = await fetchWithProxy(targetUrl);
+
+            if (data.news && data.news.length > 0) {
+                return data.news.map(item => ({
+                    source: item.provider_name || 'Yahoo Finance',
+                    headline: item.title,
+                    summary: item.type || 'News',
+                    date: new Date(item.provider_publish_time * 1000).toLocaleDateString(),
+                    url: item.link
+                }));
+            }
+            return generateMockNews(ticker);
+        } catch (e) {
+            console.warn("News fetch failed, using mock:", e);
+            return generateMockNews(ticker);
+        }
+    }
+
+    function generateMockNews(stockName) {
+        const sources = ['Wall Street Journal', 'Bloomberg', 'CNBC', 'Reuters', 'Financial Times'];
+        const newsItems = [];
+        for (let i = 0; i < 3; i++) {
+            const source = sources[Math.floor(Math.random() * sources.length)];
+            newsItems.push({
+                source: source,
+                headline: `${stockName} Market Update`,
+                summary: `Latest market updates for ${stockName}. Investors are watching key levels and market conditions.`,
+                date: new Date().toLocaleDateString(),
+                url: `https://finance.yahoo.com/quote/${stockName}`
+            });
+        }
+        return newsItems;
+    }
+
     function formatVolume(num) {
         if (num >= 1000000000) {
             return (num / 1000000000).toFixed(1) + 'B';
@@ -667,20 +706,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (num >= 1000) {
             return (num / 1000).toFixed(1) + 'K';
         }
-        const newsItems = [];
-
-        for (let i = 0; i < 3; i++) {
-            const source = sources[Math.floor(Math.random() * sources.length)];
-
-            newsItems.push({
-                source: source,
-                headline: `${stockName} Market Update`,
-                summary: `Latest market updates for ${stockName}. Investors are watching key levels and market conditions.`,
-                date: new Date().toLocaleDateString(),
-                url: `https://finance.yahoo.com/quote/${stockName}`
-            });
-        }
-        return newsItems;
+        return num.toString();
     }
 
     // --- Rendering Functions ---
@@ -1101,5 +1127,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     updateLanguage();
     console.log('Stock Guru: Initialization complete.');
+});
 
 
