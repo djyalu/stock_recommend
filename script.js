@@ -1137,6 +1137,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateAdvice(stock, data) {
         resultsGrid.innerHTML = '';
+        
+        // Track sentiment counts for summary
+        let positiveCount = 0;
+        let negativeCount = 0;
+        let neutralCount = 0;
 
         selectedInvestors.forEach(id => {
             const investor = investors.find(inv => inv.id === id);
@@ -1438,28 +1443,88 @@ document.addEventListener('DOMContentLoaded', () => {
                     adviceSentiment = "neutral";
                 }
 
-                // Generate rationale based on investor's focus
+                // Generate rationale based on investor's focus with metric tooltips
                 let rationale = '';
+                const metrics = {
+                    per: { value: data.per.toFixed(1), name: 'P/E (주가수익비율)', desc: '주가를 주당순이익(EPS)으로 나눈 값. 낮을수록 저평가, 높을수록 고평가. 일반적으로 15 이하면 저평가로 봄.' },
+                    pbr: { value: data.pbr.toFixed(2), name: 'P/B (주가순자산비율)', desc: '주가를 주당순자산으로 나눈 값. 1 미만이면 자산가치보다 저평가, 1.5 이하면 가치투자 대상.' },
+                    roe: { value: data.roe.toFixed(1) + '%', name: 'ROE (자기자본이익률)', desc: '자기자본 대비 순이익 비율. 높을수록 수익성 좋음. 15% 이상이면 우량기업.' },
+                    debtToEquity: { value: data.debtToEquity.toFixed(1), name: 'D/E (부채비율)', desc: '자기자본 대비 부채 비율. 낮을수록 재무건전성 양호. 50 이하면 안정적.' },
+                    revenueGrowth: { value: data.revenueGrowth.toFixed(1) + '%', name: '매출성장률', desc: '전년 대비 매출 증가율. 높을수록 성장성 좋음. 10% 이상이면 성장주.' },
+                    sentiment: { value: (data.sentiment * 100).toFixed(0) + '%', name: '시장심리', desc: '뉴스/소셜 미디어 기반 시장 분위기. 높을수록 낙관적, 낮을수록 비관적.' },
+                    changePercent: { value: data.changePercent + '%', name: '가격변동률', desc: '최근 가격 변동 비율. 큰 변동은 모멘텀 또는 변동성을 나타냄.' },
+                    volume: { value: data.volume, name: '거래량', desc: '일일 거래량. 높을수록 유동성과 투자자 관심이 높음.' }
+                };
+
+                const createMetric = (key) => {
+                    const m = metrics[key];
+                    return `<span class="metric-item">${key.toUpperCase()}: <span class="metric-value">${m.value}</span><span class="metric-tooltip"><span class="metric-name">${m.name}</span>${m.desc}</span></span>`;
+                };
+
                 if (id === 'buffett') {
-                    rationale = `ROE: ${data.roe.toFixed(1)}% | P/E: ${data.per.toFixed(1)} | Debt/Equity: ${data.debtToEquity.toFixed(1)}`;
+                    rationale = `${createMetric('roe')} ${createMetric('per')} ${createMetric('debtToEquity')}`;
                 } else if (id === 'wood') {
-                    rationale = `Revenue Growth: ${data.revenueGrowth.toFixed(1)}%`;
+                    rationale = `${createMetric('revenueGrowth')}`;
                 } else if (id === 'lynch') {
-                    rationale = `P/E: ${data.per.toFixed(1)} | Revenue Growth: ${data.revenueGrowth.toFixed(1)}%`;
+                    rationale = `${createMetric('per')} ${createMetric('revenueGrowth')}`;
                 } else if (id === 'graham') {
-                    rationale = `P/B: ${data.pbr.toFixed(2)} | P/E: ${data.per.toFixed(1)}`;
+                    rationale = `${createMetric('pbr')} ${createMetric('per')}`;
                 } else if (id === 'dalio') {
-                    rationale = `Sentiment: ${(data.sentiment * 100).toFixed(0)}%`;
+                    rationale = `${createMetric('sentiment')}`;
                 } else if (id === 'soros') {
-                    rationale = `Price Change: ${data.changePercent}%`;
+                    rationale = `${createMetric('changePercent')}`;
                 } else if (id === 'munger') {
-                    rationale = `ROE: ${data.roe.toFixed(1)}% | Debt/Equity: ${data.debtToEquity.toFixed(1)}`;
+                    rationale = `${createMetric('roe')} ${createMetric('debtToEquity')}`;
                 } else if (id === 'icahn') {
-                    rationale = `ROE: ${data.roe.toFixed(1)}%`;
+                    rationale = `${createMetric('roe')}`;
                 } else if (id === 'ackman') {
-                    rationale = `Revenue Growth: ${data.revenueGrowth.toFixed(1)}% | P/E: ${data.per.toFixed(1)}`;
+                    rationale = `${createMetric('revenueGrowth')} ${createMetric('per')}`;
                 } else if (id === 'simons') {
-                    rationale = `Volume: ${data.volume} | Price Change: ${data.changePercent}%`;
+                    rationale = `${createMetric('volume')} ${createMetric('changePercent')}`;
+                } else if (id === 'druckenmiller') {
+                    rationale = `${createMetric('changePercent')} ${createMetric('sentiment')}`;
+                } else if (id === 'tudor_jones') {
+                    rationale = `${createMetric('changePercent')}`;
+                } else if (id === 'marks') {
+                    rationale = `${createMetric('sentiment')} ${createMetric('pbr')}`;
+                } else if (id === 'templeton') {
+                    rationale = `${createMetric('sentiment')} ${createMetric('per')}`;
+                } else if (id === 'klarman') {
+                    rationale = `${createMetric('pbr')} ${createMetric('per')}`;
+                } else if (id === 'burry') {
+                    rationale = `${createMetric('pbr')} ${createMetric('sentiment')} ${createMetric('per')}`;
+                } else if (id === 'greenblatt') {
+                    rationale = `${createMetric('roe')} ${createMetric('per')}`;
+                } else if (id === 'bogle') {
+                    rationale = `Index Investing - Individual stock analysis not applicable`;
+                } else if (id === 'fisher') {
+                    rationale = `${createMetric('revenueGrowth')} ${createMetric('roe')}`;
+                } else if (id === 'einhorn') {
+                    rationale = `${createMetric('roe')} ${createMetric('debtToEquity')} ${createMetric('per')}`;
+                } else if (id === 'loeb') {
+                    rationale = `${createMetric('roe')} ${createMetric('pbr')}`;
+                } else if (id === 'smith') {
+                    rationale = `${createMetric('roe')} ${createMetric('per')}`;
+                } else if (id === 'miller') {
+                    rationale = `${createMetric('sentiment')} ${createMetric('changePercent')}`;
+                } else if (id === 'pabrai') {
+                    rationale = `${createMetric('roe')} ${createMetric('per')} ${createMetric('debtToEquity')}`;
+                } else if (id === 'li_lu') {
+                    rationale = `${createMetric('roe')} ${createMetric('per')}`;
+                } else if (id === 'griffin') {
+                    rationale = `${createMetric('changePercent')} ${createMetric('volume')}`;
+                } else if (id === 'robertson') {
+                    rationale = `${createMetric('roe')} ${createMetric('per')}`;
+                } else if (id === 'fink') {
+                    rationale = `Long-term ESG Focus - ${createMetric('roe')}`;
+                } else if (id === 'jones') {
+                    rationale = `Hedge Strategy - ${createMetric('changePercent')}`;
+                } else if (id === 'steinhardt') {
+                    rationale = `${createMetric('changePercent')}`;
+                } else if (id === 'bacon') {
+                    rationale = `${createMetric('sentiment')} ${createMetric('changePercent')}`;
+                } else if (id === 'swensen') {
+                    rationale = `Diversification Focus - Asset allocation strategy`;
                 }
 
                 const rationaleLabel = {
@@ -1469,6 +1534,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     zh: '分析依据',
                     es: 'Base de análisis'
                 }[currentLang];
+
+                // Count sentiments
+                if (adviceSentiment === 'positive') positiveCount++;
+                else if (adviceSentiment === 'negative') negativeCount++;
+                else neutralCount++;
 
                 const adviceCard = document.createElement('div');
                 adviceCard.className = `advice-card ${adviceSentiment}`;
@@ -1488,6 +1558,100 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultsGrid.appendChild(adviceCard);
             }
         });
+
+        // Update verdict summary
+        updateVerdictSummary(positiveCount, negativeCount, neutralCount, stock);
+    }
+
+    function updateVerdictSummary(positive, negative, neutral, stock) {
+        const verdictSummary = document.getElementById('verdictSummary');
+        const total = positive + negative + neutral;
+        
+        if (total === 0) {
+            verdictSummary.classList.add('hidden');
+            return;
+        }
+
+        verdictSummary.classList.remove('hidden');
+
+        const positivePercent = ((positive / total) * 100).toFixed(0);
+        const negativePercent = ((negative / total) * 100).toFixed(0);
+        const neutralPercent = ((neutral / total) * 100).toFixed(0);
+
+        // Update bars and percentages
+        document.getElementById('positiveBar').style.width = positivePercent + '%';
+        document.getElementById('negativeBar').style.width = negativePercent + '%';
+        document.getElementById('neutralBar').style.width = neutralPercent + '%';
+
+        document.getElementById('positivePercent').textContent = positivePercent + '%';
+        document.getElementById('negativePercent').textContent = negativePercent + '%';
+        document.getElementById('neutralPercent').textContent = neutralPercent + '%';
+
+        // Update counts
+        const countLabels = {
+            en: ['gurus', 'gurus', 'gurus'],
+            ko: ['명', '명', '명'],
+            ja: ['人', '人', '人'],
+            zh: ['位', '位', '位'],
+            es: ['gurús', 'gurús', 'gurús']
+        };
+        const countLabel = countLabels[currentLang] || countLabels['en'];
+        
+        document.getElementById('positiveCount').textContent = `${positive}${countLabel[0]}`;
+        document.getElementById('negativeCount').textContent = `${negative}${countLabel[1]}`;
+        document.getElementById('neutralCount').textContent = `${neutral}${countLabel[2]}`;
+
+        // Update labels
+        const labels = {
+            en: { title: '📊 Guru Verdict Summary', positive: 'Bullish', negative: 'Bearish', neutral: 'Hold' },
+            ko: { title: '📊 구루 의견 종합', positive: '긍정', negative: '부정', neutral: '보류' },
+            ja: { title: '📊 グル意見まとめ', positive: '強気', negative: '弱気', neutral: '保留' },
+            zh: { title: '📊 大师意见汇总', positive: '看涨', negative: '看跌', neutral: '观望' },
+            es: { title: '📊 Resumen de Gurús', positive: 'Alcista', negative: 'Bajista', neutral: 'Mantener' }
+        };
+        const label = labels[currentLang] || labels['en'];
+
+        document.getElementById('verdictSummaryTitle').textContent = label.title;
+        document.getElementById('positiveLabel').textContent = label.positive;
+        document.getElementById('negativeLabel').textContent = label.negative;
+        document.getElementById('neutralLabel').textContent = label.neutral;
+
+        // Overall verdict
+        const overallVerdict = document.getElementById('overallVerdict');
+        let verdictText = '';
+        let verdictClass = '';
+
+        if (positive > negative && positive > neutral) {
+            verdictClass = 'positive';
+            verdictText = {
+                en: `🎯 Overall: ${positive} out of ${total} gurus are BULLISH on ${stock}!`,
+                ko: `🎯 종합: ${total}명 중 ${positive}명의 구루가 ${stock}에 대해 긍정적입니다!`,
+                ja: `🎯 総合: ${total}人中${positive}人のグルが${stock}に強気です！`,
+                zh: `🎯 综合: ${total}位大师中有${positive}位看涨${stock}！`,
+                es: `🎯 General: ${positive} de ${total} gurús son ALCISTAS en ${stock}!`
+            }[currentLang] || `🎯 Overall: ${positive} out of ${total} gurus are BULLISH on ${stock}!`;
+        } else if (negative > positive && negative > neutral) {
+            verdictClass = 'negative';
+            verdictText = {
+                en: `⚠️ Caution: ${negative} out of ${total} gurus are BEARISH on ${stock}`,
+                ko: `⚠️ 주의: ${total}명 중 ${negative}명의 구루가 ${stock}에 대해 부정적입니다`,
+                ja: `⚠️ 注意: ${total}人中${negative}人のグルが${stock}に弱気です`,
+                zh: `⚠️ 警告: ${total}位大师中有${negative}位看跌${stock}`,
+                es: `⚠️ Precaución: ${negative} de ${total} gurús son BAJISTAS en ${stock}`
+            }[currentLang] || `⚠️ Caution: ${negative} out of ${total} gurus are BEARISH on ${stock}`;
+        } else {
+            verdictClass = 'neutral';
+            verdictText = {
+                en: `🤔 Mixed signals: Gurus have divided opinions on ${stock}`,
+                ko: `🤔 혼합 신호: ${stock}에 대해 구루들의 의견이 나뉩니다`,
+                ja: `🤔 混合シグナル: ${stock}についてグルの意見が分かれています`,
+                zh: `🤔 信号混合: 大师们对${stock}意见不一`,
+                es: `🤔 Señales mixtas: Los gurús tienen opiniones divididas sobre ${stock}`
+            }[currentLang] || `🤔 Mixed signals: Gurus have divided opinions on ${stock}`;
+        }
+
+        overallVerdict.className = 'overall-verdict ' + verdictClass;
+        overallVerdict.textContent = verdictText;
     }
 
     // Helper for localized dynamic messages

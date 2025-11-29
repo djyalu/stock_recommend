@@ -155,6 +155,47 @@
                 </div>
             </div>
 
+            <!-- Guru Verdict Summary -->
+            <div id="verdictSummary" class="verdict-summary hidden">
+                <h3 id="verdictSummaryTitle">📊 구루 의견 종합</h3>
+                <div class="verdict-bars">
+                    <div class="verdict-bar positive">
+                        <div class="verdict-icon">📈</div>
+                        <div class="verdict-info">
+                            <span id="positiveLabel" class="verdict-label">긍정</span>
+                            <span id="positiveCount" class="verdict-count">0명</span>
+                        </div>
+                        <div class="verdict-progress">
+                            <div id="positiveBar" class="verdict-fill positive" style="width: 0%"></div>
+                        </div>
+                        <span id="positivePercent" class="verdict-percent">0%</span>
+                    </div>
+                    <div class="verdict-bar negative">
+                        <div class="verdict-icon">📉</div>
+                        <div class="verdict-info">
+                            <span id="negativeLabel" class="verdict-label">부정</span>
+                            <span id="negativeCount" class="verdict-count">0명</span>
+                        </div>
+                        <div class="verdict-progress">
+                            <div id="negativeBar" class="verdict-fill negative" style="width: 0%"></div>
+                        </div>
+                        <span id="negativePercent" class="verdict-percent">0%</span>
+                    </div>
+                    <div class="verdict-bar neutral">
+                        <div class="verdict-icon">⏸️</div>
+                        <div class="verdict-info">
+                            <span id="neutralLabel" class="verdict-label">보류</span>
+                            <span id="neutralCount" class="verdict-count">0명</span>
+                        </div>
+                        <div class="verdict-progress">
+                            <div id="neutralBar" class="verdict-fill neutral" style="width: 0%"></div>
+                        </div>
+                        <span id="neutralPercent" class="verdict-percent">0%</span>
+                    </div>
+                </div>
+                <div id="overallVerdict" class="overall-verdict"></div>
+            </div>
+
             <div id="resultsGrid" class="results-grid">
                 <!-- Advice cards will appear here -->
             </div>

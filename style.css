@@ -712,6 +712,220 @@ h2 {
     font-weight: 600;
 }
 
+/* Metric Tooltip */
+.metric-item {
+    display: inline-block;
+    position: relative;
+    cursor: help;
+    padding: 2px 6px;
+    margin: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.metric-item:hover {
+    background: rgba(0, 230, 118, 0.15);
+}
+
+.metric-tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 250px;
+    background: #1a1a1a;
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.8rem;
+    color: #e0e0e0;
+    line-height: 1.5;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    font-family: 'Inter', sans-serif;
+    font-style: normal;
+}
+
+.metric-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--primary-color);
+}
+
+.metric-item:hover .metric-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.metric-name {
+    color: var(--primary-color);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.metric-value {
+    color: #fff;
+    font-weight: 700;
+}
+
+/* ========== Verdict Summary ========== */
+.verdict-summary {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.verdict-summary h3 {
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.verdict-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.verdict-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.verdict-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    text-align: center;
+}
+
+.verdict-info {
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+}
+
+.verdict-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.verdict-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.verdict-progress {
+    flex: 1;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.verdict-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 0.6s ease;
+}
+
+.verdict-fill.positive {
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.verdict-fill.negative {
+    background: linear-gradient(90deg, #dc2626, #f87171);
+}
+
+.verdict-fill.neutral {
+    background: linear-gradient(90deg, #d97706, #fbbf24);
+}
+
+.verdict-percent {
+    width: 50px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.verdict-bar.positive .verdict-percent {
+    color: #4ade80;
+}
+
+.verdict-bar.negative .verdict-percent {
+    color: #f87171;
+}
+
+.verdict-bar.neutral .verdict-percent {
+    color: #fbbf24;
+}
+
+.overall-verdict {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.overall-verdict.positive {
+    color: #4ade80;
+}
+
+.overall-verdict.negative {
+    color: #f87171;
+}
+
+.overall-verdict.neutral {
+    color: #fbbf24;
+}
+
+@media (max-width: 768px) {
+    .verdict-summary {
+        padding: 1rem;
+    }
+
+    .verdict-bar {
+        gap: 0.5rem;
+    }
+
+    .verdict-icon {
+        font-size: 1.2rem;
+        width: 30px;
+    }
+
+    .verdict-info {
+        width: 60px;
+    }
+
+    .verdict-label {
+        font-size: 0.8rem;
+    }
+
+    .verdict-percent {
+        width: 40px;
+        font-size: 0.9rem;
+    }
+
+    .metric-tooltip {
+        width: 200px;
+        font-size: 0.75rem;
+    }
+}
+
 /* ========== News Section ========== */
 .news-section {
     margin-top: 3rem;
