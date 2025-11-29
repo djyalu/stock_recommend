@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const investors = [
         {
             id: 'buffett',
-            image: 'assets/Disney_Style_Guru_2_Buffett.png',
+            image: 'assets/Disney_Style_Guru_2_Buffett.webp',
             name: { en: 'Warren Buffett', ko: '워렌 버핏', ja: 'ウォーレン・バフェット', zh: '沃伦·巴菲特', es: 'Warren Buffett' },
             title: { en: 'The Oracle of Omaha', ko: '오마하의 현인', ja: 'オマハの賢人', zh: '奥马哈先知', es: 'El Oráculo de Omaha' },
             philosophy: { en: 'Value investing, long-term horizon, moat, margin of safety.', ko: '가치 투자, 장기적 관점, 경제적 해자, 안전 마진.', ja: 'バリュー投資、長期的視野、堀、安全域。', zh: '价值投资，长期持有，护城河，安全边际。', es: 'Inversión de valor, horizonte a largo plazo, foso económico.' },
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'lynch',
-            image: 'assets/Disney_Style_Guru_3_Lynch.png',
+            image: 'assets/Disney_Style_Guru_3_Lynch.webp',
             name: { en: 'Peter Lynch', ko: '피터 린치', ja: 'ピーター・リンチ', zh: '彼得·林奇', es: 'Peter Lynch' },
             title: { en: 'The Chameleon', ko: '카멜레온', ja: 'カメレオン', zh: '变色龙', es: 'El Camaleón' },
             philosophy: { en: 'Invest in what you know, growth at a reasonable price (GARP).', ko: '아는 것에 투자하라, 합리적인 가격의 성장주(GARP).', ja: '知っているものに投資せよ、妥当な価格での成長。', zh: '投资你所了解的，合理价格的增长。', es: 'Invierte en lo que conoces, crecimiento a precio razonable.' },
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'dalio',
-            image: 'assets/Disney_Style_Guru_4_Dalio.png',
+            image: 'assets/Disney_Style_Guru_4_Dalio.webp',
             name: { en: 'Ray Dalio', ko: '레이 달리오', ja: 'レイ・ダリオ', zh: '雷·达里奥', es: 'Ray Dalio' },
             title: { en: 'The Macro Master', ko: '매크로 마스터', ja: 'マクロの達人', zh: '宏观大师', es: 'El Maestro Macro' },
             philosophy: { en: 'Radical transparency, economic machine, diversification, risk parity.', ko: '극단적 투명성, 경제 기계, 분산 투자, 리스크 패리티.', ja: '徹底的な透明性、経済マシン、分散投資。', zh: '极度透明，经济机器，多元化。', es: 'Transparencia radical, máquina económica, diversificación.' },
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'soros',
-            image: 'assets/Disney_Style_Guru_28_Soros.png',
+            image: 'assets/Disney_Style_Guru_28_Soros.webp',
             name: { en: 'George Soros', ko: '조지 소로스', ja: 'ジョージ・ソロス', zh: '乔治·索罗斯', es: 'George Soros' },
             title: { en: 'The Man Who Broke the Bank of England', ko: '영란은행을 무너뜨린 사나이', ja: 'イングランド銀行を潰した男', zh: '打垮英格兰银行的人', es: 'El hombre que quebró el Banco de Inglaterra' },
             philosophy: { en: 'Reflexivity theory, boom-bust cycles, macro speculation.', ko: '재귀성 이론, 붐-버스트 사이클, 거시 투기.', ja: '再帰性理論、ブーム・バスト・サイクル、マクロ投機。', zh: '反身性理论，繁荣-萧条周期，宏观投机。', es: 'Teoría de la reflexividad, ciclos de auge y caída.' },
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'munger',
-            image: 'assets/Disney_Style_Guru_27_Munger.png',
+            image: 'assets/Disney_Style_Guru_27_Munger.webp',
             name: { en: 'Charlie Munger', ko: '찰리 멍거', ja: 'チャーリー・マンガー', zh: '查理·芒格', es: 'Charlie Munger' },
             title: { en: 'The Architect', ko: '설계자', ja: '設計者', zh: '架构师', es: 'El Arquitecto' },
             philosophy: { en: 'Mental models, inversion thinking, multidisciplinary approach.', ko: '정신 모델, 역발상 사고, 다학제적 접근.', ja: 'メンタルモデル、逆転の発想、多分野アプローチ。', zh: '思维模型，逆向思维，多学科方法。', es: 'Modelos mentales, pensamiento inverso, enfoque multidisciplinario.' },
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'graham',
-            image: 'assets/Disney_Style_Guru_29_Graham.png',
+            image: 'assets/Disney_Style_Guru_29_Graham.webp',
             name: { en: 'Benjamin Graham', ko: '벤자민 그레이엄', ja: 'ベンジャミン・グレアム', zh: '本杰明·格雷厄姆', es: 'Benjamin Graham' },
             title: { en: 'The Father of Value Investing', ko: '가치 투자의 아버지', ja: 'バリュー投資の父', zh: '价值投资之父', es: 'El Padre de la Inversión de Valor' },
             philosophy: { en: 'Net-net strategy, intrinsic value, Mr. Market concept, margin of safety.', ko: '넷넷 전략, 내재 가치, 미스터 마켓 개념, 안전 마진.', ja: 'ネットネット戦略、本質的価値、ミスター・マーケット概念、安全域。', zh: '净净策略，内在价值，市场先生概念，安全边际。', es: 'Estrategia net-net, valor intrínseco, concepto de Sr. Mercado.' },
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'wood',
-            image: 'assets/Disney_Style_Guru_12_Wood.png',
+            image: 'assets/Disney_Style_Guru_12_Wood.webp',
             name: { en: 'Cathie Wood', ko: '캐시 우드', ja: 'キャシー・ウッド', zh: '凯西·伍德', es: 'Cathie Wood' },
             title: { en: 'The Innovation Evangelist', ko: '혁신 전도사', ja: 'イノベーションの伝道師', zh: '创新布道者', es: 'La Evangelista de la Innovación' },
             philosophy: { en: 'Disruptive innovation, exponential growth, 5-year time horizon.', ko: '파괴적 혁신, 기하급수적 성장, 5년 투자 시계.', ja: '破壊的イノベーション、指数関数的成長、5年の時間軸。', zh: '颠覆性创新，指数级增长，5年投资期限。', es: 'Innovación disruptiva, crecimiento exponencial, horizonte de 5 años.' },
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'icahn',
-            image: 'assets/Disney_Style_Guru_5_Icahn.png',
+            image: 'assets/Disney_Style_Guru_5_Icahn.webp',
             name: { en: 'Carl Icahn', ko: '칼 아이칸', ja: 'カール・アイカーン', zh: '卡尔·伊坎', es: 'Carl Icahn' },
             title: { en: 'The Corporate Raider', ko: '기업 사냥꾼', ja: '企業乗っ取り屋', zh: '企业掠夺者', es: 'El Asaltante Corporativo' },
             philosophy: { en: 'Shareholder activism, unlock hidden value, target underperforming management.', ko: '주주 행동주의, 숨겨진 가치 발굴, 저성과 경영진 타깃.', ja: '株主アクティビズム、隠れた価値の解放、低業績経営陣をターゲット。', zh: '股东激进主义，释放隐藏价值，针对表现不佳的管理层。', es: 'Activismo accionarial, desbloquear valor oculto.' },
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'ackman',
-            image: 'assets/Disney_Style_Guru_6_Ackman.png',
+            image: 'assets/Disney_Style_Guru_6_Ackman.webp',
             name: { en: 'Bill Ackman', ko: '빌 애크먼', ja: 'ビル・アックマン', zh: '比尔·阿克曼', es: 'Bill Ackman' },
             title: { en: 'The Activist', ko: '행동주의자', ja: 'アクティビスト', zh: '激进投资者', es: 'El Activista' },
             philosophy: { en: 'Concentrated portfolio, simple predictable businesses, activist approach.', ko: '집중 포트폴리오, 단순 예측 가능 비즈니스, 행동주의적 접근.', ja: '集中ポートフォリオ、シンプルで予測可能なビジネス、アクティビストアプローチ。', zh: '集中投资组合，简单可预测业务，激进方法。', es: 'Cartera concentrada, negocios simples y predecibles.' },
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'simons',
-            image: 'assets/Disney_Style_Guru_7_Simons.png',
+            image: 'assets/Disney_Style_Guru_7_Simons.webp',
             name: { en: 'Jim Simons', ko: '짐 사이먼스', ja: 'ジム・シモンズ', zh: '吉姆·西蒙斯', es: 'Jim Simons' },
             title: { en: 'The Quant King', ko: '퀀트의 제왕', ja: 'クオンツの王', zh: '量化之王', es: 'El Rey Cuantitativo' },
             philosophy: { en: 'Quantitative analysis, algorithmic trading, pattern recognition, data-driven.', ko: '정량적 분석, 알고리즘 트레이딩, 패턴 인식, 데이터 기반.', ja: '定量分析、アルゴリズム取引、パターン認識、データ駆動。', zh: '定量分析，算法交易，模式识别，数据驱动。', es: 'Análisis cuantitativo, trading algorítmico, reconocimiento de patrones.' },
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'druckenmiller',
-            image: 'assets/Disney_Style_Guru_1_Druckenmiller.png',
+            image: 'assets/Disney_Style_Guru_1_Druckenmiller.webp',
             name: { en: 'Stanley Druckenmiller', ko: '스탠리 드러켄밀러', ja: 'スタンレー・ドラッケンミラー', zh: '斯坦利·德鲁肯米勒', es: 'Stanley Druckenmiller' },
             title: { en: 'The Chameleon', ko: '카멜레온', ja: 'カメレオン', zh: '变色龙', es: 'El Camaleón' },
             philosophy: { en: 'Macro trading, trend following, flexible allocation, capital preservation.', ko: '거시 트레이딩, 추세 추종, 유연한 배분, 자본 보존.', ja: 'マクロ取引、トレンドフォロー、柔軟な配分、資本保全。', zh: '宏观交易，趋势跟踪，灵活配置，资本保全。', es: 'Trading macro, seguimiento de tendencias, asignación flexible.' },
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'tudor_jones',
-            image: 'assets/Disney_Style_Guru_8_Jones.png',
+            image: 'assets/Disney_Style_Guru_8_Jones.webp',
             name: { en: 'Paul Tudor Jones', ko: '폴 튜더 존스', ja: 'ポール・チューダー・ジョーンズ', zh: '保罗·都铎·琼斯', es: 'Paul Tudor Jones' },
             title: { en: 'The Macro Trader', ko: '거시 트레이더', ja: 'マクロトレーダー', zh: '宏观交易员', es: 'El Trader Macro' },
             philosophy: { en: 'Global macro, technical analysis, risk management, contrarian timing.', ko: '글로벌 매크로, 기술적 분석, 리스크 관리, 역발상 타이밍.', ja: 'グローバルマクロ、テクニカル分析、リスク管理、逆張りタイミング。', zh: '全球宏观，技术分析，风险管理，逆向时机。', es: 'Macro global, análisis técnico, gestión de riesgos.' },
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'li_lu',
-            image: 'assets/Disney_Style_Guru_9_Li_Lu.png',
+            image: 'assets/Disney_Style_Guru_9_Li_Lu.webp',
             name: { en: 'Li Lu', ko: '리 루', ja: 'リー・ルー', zh: '李录', es: 'Li Lu' },
             title: { en: 'The Chinese Buffett', ko: '중국의 버핏', ja: '中国のバフェット', zh: '中国巴菲特', es: 'El Buffett Chino' },
             philosophy: { en: 'Value investing in Asia, long-term holding, deep research on Chinese markets.', ko: '아시아 가치 투자, 장기 보유, 중국 시장 심층 연구.', ja: 'アジアでのバリュー投資、長期保有、中国市場の深い研究。', zh: '亚洲价值投资，长期持有，中国市场深度研究。', es: 'Inversión de valor en Asia, tenencia a largo plazo.' },
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'marks',
-            image: 'assets/Disney_Style_Guru_10_Marks.png',
+            image: 'assets/Disney_Style_Guru_10_Marks.webp',
             name: { en: 'Howard Marks', ko: '하워드 막스', ja: 'ハワード・マークス', zh: '霍华德·马克斯', es: 'Howard Marks' },
             title: { en: 'The Distressed Debt King', ko: '부실채권의 제왕', ja: '不良債権の王', zh: '困境债务之王', es: 'El Rey de la Deuda Distressed' },
             philosophy: { en: 'Second-level thinking, market cycles, distressed debt, risk awareness.', ko: '2차적 사고, 시장 사이클, 부실 채권, 리스크 인식.', ja: '二次的思考、市場サイクル、不良債権、リスク認識。', zh: '二级思维，市场周期，困境债务，风险意识。', es: 'Pensamiento de segundo nivel, ciclos de mercado, deuda distressed.' },
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'templeton',
-            image: 'assets/Disney_Style_Guru_11_Templeton.png',
+            image: 'assets/Disney_Style_Guru_11_Templeton.webp',
             name: { en: 'John Templeton', ko: '존 템플턴', ja: 'ジョン・テンプルトン', zh: '约翰·邓普顿', es: 'John Templeton' },
             title: { en: 'The Global Pioneer', ko: '글로벌 투자의 선구자', ja: 'グローバル投資のパイオニア', zh: '全球投资先驱', es: 'El Pionero Global' },
             philosophy: { en: 'Global diversification, contrarian investing, buy at maximum pessimism.', ko: '글로벌 분산, 역발상 투자, 최대 비관론에서 매수.', ja: 'グローバル分散、逆張り投資、最大悲観時に購入。', zh: '全球分散，逆向投资，在最悲观时买入。', es: 'Diversificación global, inversión contraria.' },
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'klarman',
-            image: 'assets/Disney_Style_Guru_13_Klarman.png',
+            image: 'assets/Disney_Style_Guru_13_Klarman.webp',
             name: { en: 'Seth Klarman', ko: '세스 클라만', ja: 'セス・クラーマン', zh: '塞斯·卡拉曼', es: 'Seth Klarman' },
             title: { en: 'The Deep Value Hunter', ko: '심층 가치 투자자', ja: 'ディープバリュー・ハンター', zh: '深度价值猎手', es: 'El Cazador de Valor Profundo' },
             philosophy: { en: 'Margin of safety, patient capital, absolute returns, risk-averse value.', ko: '안전 마진, 인내심 있는 자본, 절대 수익, 리스크 회피형 가치.', ja: '安全域、忍耐強い資本、絶対リターン、リスク回避型バリュー。', zh: '安全边际，耐心资本，绝对回报，风险规避价值。', es: 'Margen de seguridad, capital paciente, retornos absolutos.' },
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'miller',
-            image: 'assets/Disney_Style_Guru_14_Miller.png',
+            image: 'assets/Disney_Style_Guru_14_Miller.webp',
             name: { en: 'Bill Miller', ko: '빌 밀러', ja: 'ビル・ミラー', zh: '比尔·米勒', es: 'Bill Miller' },
             title: { en: 'The Contrarian Legend', ko: '역발상의 전설', ja: '逆張りの伝説', zh: '逆向传奇', es: 'La Leyenda Contraria' },
             philosophy: { en: 'Contrarian value, buy during fear, concentrated positions, long-term view.', ko: '역발상 가치, 공포에 매수, 집중 포지션, 장기적 관점.', ja: '逆張りバリュー、恐怖時に購入、集中ポジション、長期的視点。', zh: '逆向价值，恐慌时买入，集中持仓，长期观点。', es: 'Valor contrario, comprar durante el miedo, posiciones concentradas.' },
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'smith',
-            image: 'assets/Disney_Style_Guru_15_Smith.png',
+            image: 'assets/Disney_Style_Guru_15_Smith.webp',
             name: { en: 'Terry Smith', ko: '테리 스미스', ja: 'テリー・スミス', zh: '特里·史密斯', es: 'Terry Smith' },
             title: { en: 'The Quality Investor', ko: '퀄리티 투자자', ja: 'クオリティ投資家', zh: '品质投资者', es: 'El Inversor de Calidad' },
             philosophy: { en: 'Buy quality, dont overpay, do nothing. Simple, repeatable strategy.', ko: '좋은 기업을 사라, 비싸게 사지 마라, 아무것도 하지 마라.', ja: '質の高い企業を買い、高く払わず、何もしない。シンプルで再現可能な戦略。', zh: '买优质，不多付，什么都不做。简单可重复策略。', es: 'Compra calidad, no pagues de más, no hagas nada.' },
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'einhorn',
-            image: 'assets/Disney_Style_Guru_16_Einhorn.png',
+            image: 'assets/Disney_Style_Guru_16_Einhorn.webp',
             name: { en: 'David Einhorn', ko: '데이비드 아인혼', ja: 'デイビッド・アインホーン', zh: '大卫·艾因霍恩', es: 'David Einhorn' },
             title: { en: 'The Short Selling Legend', ko: '공매도의 전설', ja: '空売りの伝説', zh: '做空传奇', es: 'La Leyenda del Short Selling' },
             philosophy: { en: 'Value with catalyst, forensic accounting, short selling frauds.', ko: '촉매가 있는 가치, 법의학적 회계 분석, 사기 기업 공매도.', ja: 'カタリストのあるバリュー、フォレンジック会計、詐欺企業の空売り。', zh: '有催化剂的价值，法务会计，做空欺诈公司。', es: 'Valor con catalizador, contabilidad forense, venta corta de fraudes.' },
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'loeb',
-            image: 'assets/Disney_Style_Guru_17_Loeb.png',
+            image: 'assets/Disney_Style_Guru_17_Loeb.webp',
             name: { en: 'Daniel Loeb', ko: '다니엘 롭', ja: 'ダニエル・ローブ', zh: '丹尼尔·勒布', es: 'Daniel Loeb' },
             title: { en: 'The Event-Driven Activist', ko: '이벤트 드리븐 행동주의자', ja: 'イベント・ドリブン・アクティビスト', zh: '事件驱动激进者', es: 'El Activista Event-Driven' },
             philosophy: { en: 'Event-driven investing, shareholder activism, catalyst identification.', ko: '이벤트 드리븐 투자, 주주 행동주의, 촉매 식별.', ja: 'イベント・ドリブン投資、株主アクティビズム、カタリスト特定。', zh: '事件驱动投资，股东激进主义，催化剂识别。', es: 'Inversión event-driven, activismo accionarial.' },
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'griffin',
-            image: 'assets/Disney_Style_Guru_18_Griffin.png',
+            image: 'assets/Disney_Style_Guru_18_Griffin.webp',
             name: { en: 'Ken Griffin', ko: '켄 그리핀', ja: 'ケン・グリフィン', zh: '肯·格里芬', es: 'Ken Griffin' },
             title: { en: 'The Market Maker King', ko: '마켓 메이커의 왕', ja: 'マーケットメーカーの王', zh: '做市商之王', es: 'El Rey de los Market Makers' },
             philosophy: { en: 'Multi-strategy approach, market making, quantitative strategies, speed.', ko: '멀티 전략 접근, 마켓 메이킹, 퀀트 전략, 속도.', ja: 'マルチ戦略アプローチ、マーケットメイキング、定量戦略、スピード。', zh: '多策略方法，做市，量化策略，速度。', es: 'Enfoque multi-estrategia, market making, estrategias cuantitativas.' },
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'robertson',
-            image: 'assets/Disney_Style_Guru_19_Robertson.png',
+            image: 'assets/Disney_Style_Guru_19_Robertson.webp',
             name: { en: 'Julian Robertson', ko: '줄리안 로버트슨', ja: 'ジュリアン・ロバートソン', zh: '朱利安·罗伯逊', es: 'Julian Robertson' },
             title: { en: 'The Tiger Cub Father', ko: '타이거 컵스의 아버지', ja: 'タイガー・カブの父', zh: '小虎之父', es: 'El Padre de los Tiger Cubs' },
             philosophy: { en: 'Long/short equity, fundamental analysis, mentor culture, talent development.', ko: '롱/숏 주식, 펀더멘털 분석, 멘토 문화, 인재 육성.', ja: 'ロング/ショート株式、ファンダメンタル分析、メンター文化、人材育成。', zh: '多空股票，基本面分析，导师文化，人才培养。', es: 'Equity long/short, análisis fundamental, cultura de mentoría.' },
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'pabrai',
-            image: 'assets/Disney_Style_Guru_20_Pabrai.png',
+            image: 'assets/Disney_Style_Guru_20_Pabrai.webp',
             name: { en: 'Mohnish Pabrai', ko: '모니쉬 파브라이', ja: 'モニッシュ・パブライ', zh: '莫尼什·帕布莱', es: 'Mohnish Pabrai' },
             title: { en: 'The Cloner', ko: '클로너', ja: 'クローナー', zh: '克隆者', es: 'El Clonador' },
             philosophy: { en: 'Clone successful investors, concentrated bets, low risk high uncertainty.', ko: '성공한 투자자 복제, 집중 베팅, 낮은 리스크 높은 불확실성.', ja: '成功した投資家を複製、集中投資、低リスク高不確実性。', zh: '克隆成功投资者，集中下注，低风险高不确定性。', es: 'Clonar inversores exitosos, apuestas concentradas.' },
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'fink',
-            image: 'assets/Disney_Style_Guru_21_Fink.png',
+            image: 'assets/Disney_Style_Guru_21_Fink.webp',
             name: { en: 'Larry Fink', ko: '래리 핑크', ja: 'ラリー・フィンク', zh: '拉里·芬克', es: 'Larry Fink' },
             title: { en: 'The Asset Management Titan', ko: '자산운용의 거인', ja: '資産運用の巨人', zh: '资产管理巨头', es: 'El Titán de la Gestión de Activos' },
             philosophy: { en: 'Long-term thinking, ESG investing, passive index funds, risk management.', ko: '장기적 사고, ESG 투자, 패시브 인덱스 펀드, 리스크 관리.', ja: '長期的思考、ESG投資、パッシブインデックスファンド、リスク管理。', zh: '长期思维，ESG投资，被动指数基金，风险管理。', es: 'Pensamiento a largo plazo, inversión ESG, fondos indexados pasivos.' },
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'jones',
-            image: 'assets/Disney_Style_Guru_22_Jones.png',
+            image: 'assets/Disney_Style_Guru_22_Jones.webp',
             name: { en: 'Alfred Winslow Jones', ko: '알프레드 윈슬로우 존스', ja: 'アルフレッド・ウィンスロー・ジョーンズ', zh: '阿尔弗雷德·温斯洛·琼斯', es: 'Alfred Winslow Jones' },
             title: { en: 'The Hedge Fund Pioneer', ko: '헤지펀드의 선구자', ja: 'ヘッジファンドのパイオニア', zh: '对冲基金先驱', es: 'El Pionero del Hedge Fund' },
             philosophy: { en: 'Long/short equity, leverage, hedging market risk, performance fees.', ko: '롱/숏 주식, 레버리지, 시장 리스크 헤지, 성과 보수.', ja: 'ロング/ショート株式、レバレッジ、市場リスクのヘッジ、成功報酬。', zh: '多空股票，杠杆，对冲市场风险，业绩报酬。', es: 'Equity long/short, apalancamiento, cobertura de riesgo de mercado.' },
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'steinhardt',
-            image: 'assets/Disney_Style_Guru_23_Steinhardt.png',
+            image: 'assets/Disney_Style_Guru_23_Steinhardt.webp',
             name: { en: 'Michael Steinhardt', ko: '마이클 스타인하트', ja: 'マイケル・スタインハート', zh: '迈克尔·斯坦哈特', es: 'Michael Steinhardt' },
             title: { en: 'The Trading Prodigy', ko: '트레이딩 신동', ja: 'トレーディングの神童', zh: '交易神童', es: 'El Prodigio del Trading' },
             philosophy: { en: 'Short-term trading, variant perception, contrarian timing, aggressive style.', ko: '단기 트레이딩, 변별적 인식, 역발상 타이밍, 공격적 스타일.', ja: '短期トレーディング、変異認識、逆張りタイミング、攻撃的スタイル。', zh: '短期交易，变异认知，逆向时机，激进风格。', es: 'Trading a corto plazo, percepción variante, timing contrario.' },
@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'bacon',
-            image: 'assets/Disney_Style_Guru_24_Bacon.png',
+            image: 'assets/Disney_Style_Guru_24_Bacon.webp',
             name: { en: 'Louis Bacon', ko: '루이스 베이컨', ja: 'ルイス・ベーコン', zh: '路易斯·培根', es: 'Louis Bacon' },
             title: { en: 'The Global Macro Master', ko: '글로벌 매크로 마스터', ja: 'グローバルマクロの達人', zh: '全球宏观大师', es: 'El Maestro del Macro Global' },
             philosophy: { en: 'Global macro trading, risk management, capital preservation, discretionary.', ko: '글로벌 매크로 트레이딩, 리스크 관리, 자본 보존, 재량적 운용.', ja: 'グローバルマクロ取引、リスク管理、資本保全、裁量運用。', zh: '全球宏观交易，风险管理，资本保全，自主决策。', es: 'Trading macro global, gestión de riesgos, preservación de capital.' },
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'burry',
-            image: 'assets/Disney_Style_Guru_25_Burry.png',
+            image: 'assets/Disney_Style_Guru_25_Burry.webp',
             name: { en: 'Michael Burry', ko: '마이클 버리', ja: 'マイケル・バーリー', zh: '迈克尔·伯里', es: 'Michael Burry' },
             title: { en: 'The Big Short', ko: '빅 숏', ja: 'ビッグ・ショート', zh: '大空头', es: 'El Gran Corto' },
             philosophy: { en: 'Deep value analysis, contrarian bets, forensic research, patience.', ko: '심층 가치 분석, 역발상 베팅, 법의학적 연구, 인내.', ja: 'ディープバリュー分析、逆張り投資、フォレンジック研究、忍耐。', zh: '深度价值分析，逆向下注，法务研究，耐心。', es: 'Análisis de valor profundo, apuestas contrarias, investigación forense.' },
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'greenblatt',
-            image: 'assets/Disney_Style_Guru_26_Greenblatt.png',
+            image: 'assets/Disney_Style_Guru_26_Greenblatt.webp',
             name: { en: 'Joel Greenblatt', ko: '조엘 그린블랫', ja: 'ジョエル・グリーンブラット', zh: '乔尔·格林布拉特', es: 'Joel Greenblatt' },
             title: { en: 'The Magic Formula Inventor', ko: '마법 공식의 발명가', ja: 'マジックフォーミュラの発明者', zh: '神奇公式发明者', es: 'El Inventor de la Fórmula Mágica' },
             philosophy: { en: 'Magic formula (high ROIC + low P/E), special situations, systematic value.', ko: '마법 공식 (높은 ROIC + 낮은 P/E), 특수 상황, 체계적 가치.', ja: 'マジックフォーミュラ(高ROIC+低P/E)、特殊状況、体系的バリュー。', zh: '神奇公式(高ROIC+低市盈率)，特殊情况，系统性价值。', es: 'Fórmula mágica (alto ROIC + bajo P/E), situaciones especiales.' },
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'fisher',
-            image: 'assets/Disney_Style_Guru_30_Jones_2.png',
+            image: 'assets/Disney_Style_Guru_30_Jones_2.webp',
             name: { en: 'Philip Fisher', ko: '필립 피셔', ja: 'フィリップ・フィッシャー', zh: '菲利普·费雪', es: 'Philip Fisher' },
             title: { en: 'The Growth Investing Father', ko: '성장 투자의 아버지', ja: '成長投資の父', zh: '成长投资之父', es: 'El Padre de la Inversión en Crecimiento' },
             philosophy: { en: 'Scuttlebutt method, quality growth, long-term holding, management quality.', ko: '스커틀버트 방법론, 양질의 성장, 장기 보유, 경영진 품질.', ja: 'スカットルバット方式、質の高い成長、長期保有、経営陣の質。', zh: '闲聊法，优质成长，长期持有，管理层质量。', es: 'Método scuttlebutt, crecimiento de calidad, tenencia a largo plazo.' },
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'swensen',
-            image: 'assets/Disney_Style_Guru_31_Druckenmiller_2.png',
+            image: 'assets/Disney_Style_Guru_31_Druckenmiller_2.webp',
             name: { en: 'David Swensen', ko: '데이비드 스웬슨', ja: 'デイビッド・スウェンセン', zh: '大卫·斯文森', es: 'David Swensen' },
             title: { en: 'The Yale Model Creator', ko: '예일 모델의 창시자', ja: 'イェールモデルの創設者', zh: '耶鲁模式创始人', es: 'El Creador del Modelo Yale' },
             philosophy: { en: 'Endowment model, alternative assets, long-term horizon, diversification.', ko: '기부금 모델, 대안 자산, 장기 투자, 분산.', ja: '大学基金モデル、オルタナティブ資産、長期的視野、分散。', zh: '捐赠基金模式，另类资产，长期视野，分散化。', es: 'Modelo de dotación, activos alternativos, horizonte a largo plazo.' },
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'bogle',
-            image: 'assets/Disney_Style_Guru_32_Klarman_2.png',
+            image: 'assets/Disney_Style_Guru_32_Klarman_2.webp',
             name: { en: 'John Bogle', ko: '존 보글', ja: 'ジョン・ボーグル', zh: '约翰·博格尔', es: 'John Bogle' },
             title: { en: 'The Index Fund Pioneer', ko: '인덱스 펀드의 아버지', ja: 'インデックスファンドのパイオニア', zh: '指数基金之父', es: 'El Pionero del Fondo Indexado' },
             philosophy: { en: 'Low-cost index investing, buy and hold, minimize fees, long-term focus.', ko: '저비용 인덱스 투자, 매수 후 보유, 수수료 최소화, 장기 집중.', ja: '低コストインデックス投資、バイ・アンド・ホールド、手数料最小化、長期志向。', zh: '低成本指数投资，买入持有，最小化费用，长期专注。', es: 'Inversión indexada de bajo costo, comprar y mantener, minimizar comisiones.' },
