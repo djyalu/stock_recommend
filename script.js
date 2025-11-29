@@ -1107,19 +1107,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.news && data.news.length > 0) {
                 return data.news.map(item => {
-                    // Parse date safely
+                    // Parse date safely - try multiple formats
                     let dateStr = '';
-                    if (item.provider_publish_time) {
-                        const date = new Date(item.provider_publish_time * 1000);
-                        if (!isNaN(date.getTime())) {
-                            dateStr = date.toLocaleDateString(currentLang === 'ko' ? 'ko-KR' : 
-                                      currentLang === 'ja' ? 'ja-JP' : 
-                                      currentLang === 'zh' ? 'zh-CN' : 
-                                      currentLang === 'es' ? 'es-ES' : 'en-US');
+                    try {
+                        // Try provider_publish_time (Unix timestamp)
+                        if (item.provider_publish_time && typeof item.provider_publish_time === 'number') {
+                            const date = new Date(item.provider_publish_time * 1000);
+                            if (date instanceof Date && !isNaN(date)) {
+                                dateStr = formatNewsDate(date);
+                            }
                         }
+                        // Try providerPublishTime (string or number)
+                        if (!dateStr && item.providerPublishTime) {
+                            const timestamp = typeof item.providerPublishTime === 'string' 
+                                ? parseInt(item.providerPublishTime) 
+                                : item.providerPublishTime;
+                            const date = new Date(timestamp * 1000);
+                            if (date instanceof Date && !isNaN(date)) {
+                                dateStr = formatNewsDate(date);
+                            }
+                        }
+                        // Try publish_time
+                        if (!dateStr && item.publish_time) {
+                            const date = new Date(item.publish_time);
+                            if (date instanceof Date && !isNaN(date)) {
+                                dateStr = formatNewsDate(date);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Date parsing error:', e);
                     }
-                    if (!dateStr) {
-                        dateStr = new Date().toLocaleDateString();
+                    
+                    // Fallback to relative time or today
+                    if (!dateStr || dateStr === 'Invalid Date') {
+                        dateStr = getRelativeTime();
                     }
 
                     return {
@@ -1191,6 +1212,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return headline;
+    }
+
+    function formatNewsDate(date) {
+        const locale = currentLang === 'ko' ? 'ko-KR' : 
+                      currentLang === 'ja' ? 'ja-JP' : 
+                      currentLang === 'zh' ? 'zh-CN' : 
+                      currentLang === 'es' ? 'es-ES' : 'en-US';
+        try {
+            return date.toLocaleDateString(locale, { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        } catch {
+            return date.toLocaleDateString();
+        }
+    }
+
+    function getRelativeTime() {
+        const labels = {
+            en: 'Recently',
+            ko: '최근',
+            ja: '最近',
+            zh: '最近',
+            es: 'Reciente'
+        };
+        return labels[currentLang] || labels.en;
     }
 
     function generateMockNews(stockName) {
