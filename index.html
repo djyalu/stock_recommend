@@ -110,12 +110,37 @@
                     <div id="autocompleteList" class="autocomplete-items"></div>
                 </div>
                 <button id="analyzeBtn" class="primary-btn">Get Advice</button>
+                <button id="favoriteBtn" class="favorite-btn" title="즐겨찾기 추가">
+                    <span id="favoriteIcon">☆</span>
+                </button>
+            </div>
+
+            <!-- Hot Stocks -->
+            <div class="hot-stocks">
+                <span class="hot-label">🔥 <span id="hotStocksLabel">인기 종목:</span></span>
+                <div class="hot-stock-buttons">
+                    <button class="hot-stock-btn" data-symbol="AAPL">Apple</button>
+                    <button class="hot-stock-btn" data-symbol="TSLA">Tesla</button>
+                    <button class="hot-stock-btn" data-symbol="NVDA">NVIDIA</button>
+                    <button class="hot-stock-btn" data-symbol="MSFT">Microsoft</button>
+                    <button class="hot-stock-btn" data-symbol="GOOGL">Google</button>
+                    <button class="hot-stock-btn" data-symbol="AMZN">Amazon</button>
+                </div>
+            </div>
+
+            <!-- Favorites -->
+            <div id="favoritesSection" class="favorites-section hidden">
+                <span class="favorites-label">⭐ <span id="favoritesLabel">즐겨찾기:</span></span>
+                <div id="favoritesList" class="favorites-list"></div>
             </div>
 
             <!-- Recent History -->
             <div id="historySection" class="history-section hidden">
                 <span id="historyLabel" class="history-label">최근 분석:</span>
                 <div id="historyList" class="history-list"></div>
+                <button id="compareBtn" class="compare-btn" onclick="window.stockGuru?.showCompare()" title="종목 비교">
+                    📊 비교
+                </button>
             </div>
         </div>
     </header>
@@ -248,11 +273,63 @@
         </section>
     </main>
 
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcutsModal" class="modal hidden">
+        <div class="modal-content shortcuts-modal">
+            <div class="modal-header">
+                <h3>⌨️ 키보드 단축키</h3>
+                <button class="close-btn" onclick="document.getElementById('shortcutsModal').classList.add('hidden')">&times;</button>
+            </div>
+            <div class="modal-body shortcuts-body">
+                <div class="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>K</kbd>
+                    <span>검색창 포커스</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Enter</kbd>
+                    <span>분석 시작</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>D</kbd>
+                    <span>즐겨찾기 추가/제거</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Esc</kbd>
+                    <span>모달 닫기</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>?</kbd>
+                    <span>단축키 도움말</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Modal -->
+    <div id="compareModal" class="modal hidden">
+        <div class="modal-content compare-modal">
+            <div class="modal-header">
+                <h3 id="compareTitle">📊 종목 비교</h3>
+                <button class="close-btn" onclick="document.getElementById('compareModal').classList.add('hidden')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="compareContent" class="compare-content">
+                    <!-- Comparison table will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-brand">
                 <span class="footer-logo">📈 Stock Guru</span>
                 <p id="footerTagline" class="footer-tagline">투자 대가들의 지혜를 당신에게</p>
+            </div>
+            <div class="footer-shortcuts">
+                <button class="shortcuts-hint" onclick="document.getElementById('shortcutsModal').classList.remove('hidden')">
+                    ⌨️ <kbd>?</kbd> 단축키
+                </button>
             </div>
             <div class="footer-links">
                 <a href="https://github.com/djyalu/stock_guru" target="_blank" rel="noopener noreferrer" aria-label="GitHub">

@@ -1792,3 +1792,334 @@ h2 {
         margin: 1rem;
     }
 }
+
+/* ========== Hot Stocks ========== */
+.hot-stocks {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.hot-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.hot-stock-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.hot-stock-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.hot-stock-btn:hover {
+    background: var(--primary-color);
+    color: #000;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+/* ========== Favorites ========== */
+.favorites-section {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.favorites-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.favorites-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.favorite-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.1) 100%);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: #ffd700;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.favorite-item:hover {
+    background: rgba(255, 215, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.favorite-item .remove-fav {
+    margin-left: 0.3rem;
+    opacity: 0.6;
+    cursor: pointer;
+}
+
+.favorite-item .remove-fav:hover {
+    opacity: 1;
+}
+
+.favorite-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.favorite-btn:hover {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: #ffd700;
+    color: #ffd700;
+}
+
+.favorite-btn.active {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: #ffd700;
+    color: #ffd700;
+}
+
+/* Compare Button */
+.compare-btn {
+    background: linear-gradient(135deg, rgba(41, 121, 255, 0.2) 0%, rgba(0, 230, 118, 0.2) 100%);
+    border: 1px solid rgba(41, 121, 255, 0.4);
+    color: var(--secondary-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 0.5rem;
+}
+
+.compare-btn:hover {
+    background: linear-gradient(135deg, rgba(41, 121, 255, 0.3) 0%, rgba(0, 230, 118, 0.3) 100%);
+    transform: translateY(-2px);
+}
+
+/* ========== Keyboard Shortcuts ========== */
+.shortcuts-modal {
+    max-width: 400px;
+}
+
+.shortcuts-body {
+    padding: 1rem 0;
+}
+
+.shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.shortcut-item:last-child {
+    border-bottom: none;
+}
+
+kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 0.2rem 0.5rem;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+}
+
+.shortcuts-hint {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.shortcuts-hint:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+}
+
+.shortcuts-hint kbd {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+}
+
+.footer-shortcuts {
+    margin-top: 0.5rem;
+}
+
+/* ========== Compare Modal ========== */
+.compare-modal {
+    max-width: 800px;
+    width: 90%;
+}
+
+.compare-content {
+    overflow-x: auto;
+}
+
+.compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.compare-table th,
+.compare-table td {
+    padding: 0.75rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.compare-table th {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.compare-table tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.compare-table .metric-name {
+    text-align: left;
+    color: var(--text-muted);
+}
+
+.compare-table .positive {
+    color: #4ade80;
+}
+
+.compare-table .negative {
+    color: #f87171;
+}
+
+/* ========== Card Animations ========== */
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.advice-card {
+    animation: cardFadeIn 0.5s ease forwards;
+}
+
+.advice-card:nth-child(1) { animation-delay: 0s; }
+.advice-card:nth-child(2) { animation-delay: 0.1s; }
+.advice-card:nth-child(3) { animation-delay: 0.2s; }
+.advice-card:nth-child(4) { animation-delay: 0.3s; }
+.advice-card:nth-child(5) { animation-delay: 0.4s; }
+.advice-card:nth-child(6) { animation-delay: 0.5s; }
+.advice-card:nth-child(7) { animation-delay: 0.6s; }
+.advice-card:nth-child(8) { animation-delay: 0.7s; }
+
+.verdict-summary {
+    animation: slideInFromRight 0.6s ease forwards;
+}
+
+.stock-summary {
+    animation: cardFadeIn 0.4s ease forwards;
+}
+
+.verdict-percent {
+    animation: countUp 0.5s ease forwards;
+}
+
+.hot-stock-btn:active {
+    animation: pulse 0.3s ease;
+}
+
+/* ========== Light Mode Adjustments ========== */
+[data-theme="light"] .hot-stock-btn {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .favorite-item {
+    background: linear-gradient(135deg, rgba(255, 165, 0, 0.15) 0%, rgba(255, 140, 0, 0.15) 100%);
+    border: 1px solid rgba(255, 165, 0, 0.4);
+    color: #d97706;
+}
+
+[data-theme="light"] kbd {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #059669;
+}
+
+[data-theme="light"] .shortcuts-hint {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .compare-table th {
+    background: rgba(0, 0, 0, 0.05);
+}

@@ -1901,6 +1901,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update verdict summary
         updateVerdictSummary(positiveCount, negativeCount, neutralCount, stock, data);
 
+        // Store result for comparison
+        if (typeof storeAnalysisResult === 'function') {
+            storeAnalysisResult({
+                symbol: stock,
+                name: stock,
+                ...data
+            });
+        }
+
         // Return dominant sentiment for history
         let dominant = 'neutral';
         if (positiveCount > negativeCount && positiveCount > neutralCount) dominant = 'positive';
@@ -2810,6 +2819,242 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast(currentLang === 'ko' ? '복사 실패' : 'Copy failed');
         });
     }
+
+    // ========== Hot Stocks ==========
+    function initHotStocks() {
+        const hotStockBtns = document.querySelectorAll('.hot-stock-btn');
+        hotStockBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const symbol = btn.dataset.symbol;
+                stockInput.value = symbol;
+                analyzeBtn.click();
+            });
+        });
+    }
+    initHotStocks();
+
+    // ========== Favorites ==========
+    let favorites = JSON.parse(localStorage.getItem('stockFavorites') || '[]');
+    
+    function initFavorites() {
+        renderFavorites();
+        updateFavoriteButton();
+        
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        if (favoriteBtn) {
+            favoriteBtn.addEventListener('click', toggleFavorite);
+        }
+    }
+    
+    function toggleFavorite() {
+        const currentStock = stockInput.value.trim().toUpperCase();
+        if (!currentStock) {
+            showToast(currentLang === 'ko' ? '종목을 입력하세요' : 'Enter a stock symbol');
+            return;
+        }
+        
+        const index = favorites.indexOf(currentStock);
+        if (index > -1) {
+            favorites.splice(index, 1);
+            showToast(currentLang === 'ko' ? `⭐ ${currentStock} 즐겨찾기 제거` : `⭐ ${currentStock} removed from favorites`);
+        } else {
+            favorites.unshift(currentStock);
+            if (favorites.length > 10) favorites.pop();
+            showToast(currentLang === 'ko' ? `⭐ ${currentStock} 즐겨찾기 추가` : `⭐ ${currentStock} added to favorites`);
+        }
+        
+        localStorage.setItem('stockFavorites', JSON.stringify(favorites));
+        renderFavorites();
+        updateFavoriteButton();
+    }
+    
+    function updateFavoriteButton() {
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        const favoriteIcon = document.getElementById('favoriteIcon');
+        const currentStock = stockInput.value.trim().toUpperCase();
+        
+        if (favoriteBtn && favoriteIcon) {
+            const isFav = favorites.includes(currentStock);
+            favoriteBtn.classList.toggle('active', isFav);
+            favoriteIcon.textContent = isFav ? '★' : '☆';
+        }
+    }
+    
+    function renderFavorites() {
+        const favoritesSection = document.getElementById('favoritesSection');
+        const favoritesList = document.getElementById('favoritesList');
+        
+        if (!favoritesSection || !favoritesList) return;
+        
+        if (favorites.length === 0) {
+            favoritesSection.classList.add('hidden');
+            return;
+        }
+        
+        favoritesSection.classList.remove('hidden');
+        favoritesList.innerHTML = favorites.map(stock => `
+            <div class="favorite-item" data-symbol="${stock}">
+                <span class="fav-symbol">${stock}</span>
+                <span class="remove-fav" data-symbol="${stock}">✕</span>
+            </div>
+        `).join('');
+        
+        // Click to analyze
+        favoritesList.querySelectorAll('.fav-symbol').forEach(el => {
+            el.addEventListener('click', () => {
+                stockInput.value = el.textContent;
+                analyzeBtn.click();
+            });
+        });
+        
+        // Remove from favorites
+        favoritesList.querySelectorAll('.remove-fav').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const symbol = el.dataset.symbol;
+                favorites = favorites.filter(f => f !== symbol);
+                localStorage.setItem('stockFavorites', JSON.stringify(favorites));
+                renderFavorites();
+                updateFavoriteButton();
+            });
+        });
+    }
+    initFavorites();
+
+    // Update favorite button when input changes
+    stockInput.addEventListener('input', updateFavoriteButton);
+
+    // ========== Keyboard Shortcuts ==========
+    function initKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K: Focus search
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                stockInput.focus();
+                stockInput.select();
+            }
+            
+            // Ctrl+D: Toggle favorite
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                toggleFavorite();
+            }
+            
+            // ?: Show shortcuts modal
+            if (e.key === '?' && !e.ctrlKey && !e.altKey) {
+                const activeElement = document.activeElement;
+                if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    document.getElementById('shortcutsModal').classList.remove('hidden');
+                }
+            }
+            
+            // Esc: Close modals
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+            }
+        });
+    }
+    initKeyboardShortcuts();
+
+    // ========== Analysis History for Compare ==========
+    let analysisResults = [];
+    
+    function storeAnalysisResult(data) {
+        const result = {
+            symbol: data.symbol || stockInput.value.toUpperCase(),
+            name: data.name || stockInput.value,
+            price: data.price,
+            change: data.change,
+            changePercent: data.changePercent,
+            per: data.per,
+            pbr: data.pbr,
+            roe: data.roe,
+            revenueGrowth: data.revenueGrowth,
+            dividendYield: data.dividendYield,
+            timestamp: Date.now()
+        };
+        
+        // Remove existing entry for same symbol
+        analysisResults = analysisResults.filter(r => r.symbol !== result.symbol);
+        analysisResults.unshift(result);
+        
+        // Keep only last 5
+        if (analysisResults.length > 5) {
+            analysisResults = analysisResults.slice(0, 5);
+        }
+    }
+
+    // ========== Compare Feature ==========
+    function showCompareModal() {
+        if (analysisResults.length < 2) {
+            showToast(currentLang === 'ko' ? '비교하려면 2개 이상의 종목을 분석하세요' : 'Analyze at least 2 stocks to compare');
+            return;
+        }
+        
+        const compareContent = document.getElementById('compareContent');
+        if (!compareContent) return;
+        
+        const metrics = [
+            { key: 'price', label: currentLang === 'ko' ? '현재가' : 'Price' },
+            { key: 'changePercent', label: currentLang === 'ko' ? '등락률' : 'Change %' },
+            { key: 'per', label: 'PER' },
+            { key: 'pbr', label: 'PBR' },
+            { key: 'roe', label: 'ROE' },
+            { key: 'revenueGrowth', label: currentLang === 'ko' ? '매출성장률' : 'Revenue Growth' },
+            { key: 'dividendYield', label: currentLang === 'ko' ? '배당률' : 'Dividend Yield' }
+        ];
+        
+        let tableHTML = '<table class="compare-table">';
+        tableHTML += '<thead><tr><th>' + (currentLang === 'ko' ? '지표' : 'Metric') + '</th>';
+        analysisResults.forEach(r => {
+            tableHTML += `<th>${r.symbol}</th>`;
+        });
+        tableHTML += '</tr></thead><tbody>';
+        
+        metrics.forEach(metric => {
+            tableHTML += `<tr><td class="metric-name">${metric.label}</td>`;
+            analysisResults.forEach(r => {
+                let value = r[metric.key];
+                let className = '';
+                
+                if (typeof value === 'number') {
+                    if (metric.key === 'changePercent' || metric.key === 'roe' || metric.key === 'revenueGrowth') {
+                        className = value > 0 ? 'positive' : value < 0 ? 'negative' : '';
+                        value = value.toFixed(2) + '%';
+                    } else if (metric.key === 'dividendYield') {
+                        value = value.toFixed(2) + '%';
+                    } else if (metric.key === 'price') {
+                        value = '$' + value.toFixed(2);
+                    } else {
+                        value = value.toFixed(2);
+                    }
+                } else {
+                    value = '-';
+                }
+                
+                tableHTML += `<td class="${className}">${value}</td>`;
+            });
+            tableHTML += '</tr>';
+        });
+        
+        tableHTML += '</tbody></table>';
+        compareContent.innerHTML = tableHTML;
+        
+        document.getElementById('compareModal').classList.remove('hidden');
+    }
+
+    // Store result after each analysis
+    const originalShowResults = window.stockGuru?.showResults;
+    
+    // Expose compare feature
+    window.stockGuru = {
+        ...window.stockGuru,
+        showCompare: showCompareModal,
+        analysisResults
+    };
 });
 
 
