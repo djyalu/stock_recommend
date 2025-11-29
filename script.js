@@ -1106,19 +1106,91 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await fetchWithProxy(targetUrl);
 
             if (data.news && data.news.length > 0) {
-                return data.news.map(item => ({
-                    source: item.provider_name || 'Yahoo Finance',
-                    headline: item.title,
-                    summary: item.type || 'News',
-                    date: new Date(item.provider_publish_time * 1000).toLocaleDateString(),
-                    url: item.link
-                }));
+                return data.news.map(item => {
+                    // Parse date safely
+                    let dateStr = '';
+                    if (item.provider_publish_time) {
+                        const date = new Date(item.provider_publish_time * 1000);
+                        if (!isNaN(date.getTime())) {
+                            dateStr = date.toLocaleDateString(currentLang === 'ko' ? 'ko-KR' : 
+                                      currentLang === 'ja' ? 'ja-JP' : 
+                                      currentLang === 'zh' ? 'zh-CN' : 
+                                      currentLang === 'es' ? 'es-ES' : 'en-US');
+                        }
+                    }
+                    if (!dateStr) {
+                        dateStr = new Date().toLocaleDateString();
+                    }
+
+                    return {
+                        source: item.publisher || item.provider_name || 'Yahoo Finance',
+                        headline: item.title,
+                        headlineOriginal: item.title,
+                        summary: item.type || 'News',
+                        date: dateStr,
+                        url: item.link
+                    };
+                });
             }
             return generateMockNews(ticker);
         } catch (e) {
             console.warn("News fetch failed, using mock:", e);
             return generateMockNews(ticker);
         }
+    }
+
+    // Simple translation/summary for news headlines
+    function summarizeHeadline(headline, lang) {
+        if (lang === 'en') return headline;
+        
+        // Common financial terms translation
+        const translations = {
+            'rises': { ko: '상승', ja: '上昇', zh: '上涨', es: 'sube' },
+            'falls': { ko: '하락', ja: '下落', zh: '下跌', es: 'cae' },
+            'drops': { ko: '하락', ja: '下落', zh: '下跌', es: 'cae' },
+            'gains': { ko: '상승', ja: '上昇', zh: '上涨', es: 'gana' },
+            'jumps': { ko: '급등', ja: '急騰', zh: '飙升', es: 'salta' },
+            'surges': { ko: '급등', ja: '急騰', zh: '飙升', es: 'dispara' },
+            'plunges': { ko: '급락', ja: '急落', zh: '暴跌', es: 'desploma' },
+            'stock': { ko: '주식', ja: '株', zh: '股票', es: 'acción' },
+            'shares': { ko: '주가', ja: '株価', zh: '股价', es: 'acciones' },
+            'market': { ko: '시장', ja: '市場', zh: '市场', es: 'mercado' },
+            'earnings': { ko: '실적', ja: '決算', zh: '业绩', es: 'ganancias' },
+            'revenue': { ko: '매출', ja: '売上', zh: '营收', es: 'ingresos' },
+            'profit': { ko: '수익', ja: '利益', zh: '利润', es: 'beneficio' },
+            'loss': { ko: '손실', ja: '損失', zh: '亏损', es: 'pérdida' },
+            'buy': { ko: '매수', ja: '買い', zh: '买入', es: 'compra' },
+            'sell': { ko: '매도', ja: '売り', zh: '卖出', es: 'venta' },
+            'upgrade': { ko: '상향', ja: '格上げ', zh: '上调', es: 'mejora' },
+            'downgrade': { ko: '하향', ja: '格下げ', zh: '下调', es: 'rebaja' },
+            'target': { ko: '목표가', ja: '目標株価', zh: '目标价', es: 'objetivo' },
+            'analyst': { ko: '애널리스트', ja: 'アナリスト', zh: '分析师', es: 'analista' },
+            'record': { ko: '신고가', ja: '最高値', zh: '新高', es: 'récord' },
+            'high': { ko: '고점', ja: '高値', zh: '高位', es: 'alto' },
+            'low': { ko: '저점', ja: '安値', zh: '低位', es: 'bajo' }
+        };
+
+        // Generate a brief Korean summary based on keywords
+        let summary = headline;
+        let keywords = [];
+
+        for (const [eng, trans] of Object.entries(translations)) {
+            if (headline.toLowerCase().includes(eng)) {
+                keywords.push(trans[lang] || trans.ko);
+            }
+        }
+
+        if (keywords.length > 0 && lang !== 'en') {
+            const summaryLabels = {
+                ko: '핵심:',
+                ja: '要点:',
+                zh: '要点:',
+                es: 'Clave:'
+            };
+            return `${headline}\n<span class="news-keywords">${summaryLabels[lang] || '핵심:'} ${keywords.slice(0, 3).join(', ')}</span>`;
+        }
+
+        return headline;
     }
 
     function generateMockNews(stockName) {
@@ -1252,10 +1324,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
+            const summarizedHeadline = summarizeHeadline(item.headline, currentLang);
+            
             card.innerHTML = `
                 <span class="news-source">${item.source}${item.url ? ' <span style="font-size:0.8em">🔗</span>' : ''}</span>
-                <div class="news-headline">${item.headline}</div>
-                <div class="news-summary">${item.summary}</div>
+                <div class="news-headline">${summarizedHeadline}</div>
                 <div class="news-date">${item.date}</div>
             `;
             newsGrid.appendChild(card);
