@@ -294,6 +294,22 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         newsNeutral: {
             en: "Recent news shows mixed or neutral sentiment.", ko: "최근 뉴스는 중립적이거나 엇갈린 반응을 보입니다.", ja: "最近のニュースは中立的またはまちまちです。", zh: "近期新闻显示混合或中立情绪。", es: "Las noticias recientes muestran un sentimiento mixto o neutral."
+        },
+        selectAll: {
+            en: "Select All", ko: "전체 선택", ja: "全選択", zh: "全选", es: "Seleccionar Todo"
+        },
+        deselectAll: {
+            en: "Deselect All", ko: "전체 해제", ja: "全解除", zh: "取消全选", es: "Deseleccionar Todo"
+        },
+        footerTagline: {
+            en: "Investment wisdom from the masters", ko: "투자 대가들의 지혜를 당신에게", ja: "投資の達人たちの知恵をあなたに", zh: "大师们的投资智慧", es: "Sabiduría de inversión de los maestros"
+        },
+        footerDisclaimer: {
+            en: "⚠️ This service is for educational and entertainment purposes only. Investment decisions are your responsibility.", 
+            ko: "⚠️ 본 서비스는 교육 및 엔터테인먼트 목적으로만 제공됩니다. 투자 결정은 본인의 책임입니다.", 
+            ja: "⚠️ 本サービスは教育・娯楽目的のみで提供されます。投資判断はご自身の責任です。", 
+            zh: "⚠️ 本服务仅供教育和娱乐目的。投资决策由您自己负责。", 
+            es: "⚠️ Este servicio es solo para fines educativos y de entretenimiento. Las decisiones de inversión son su responsabilidad."
         }
     };
 
@@ -321,8 +337,34 @@ document.addEventListener('DOMContentLoaded', () => {
         analyzeBtn: document.getElementById('analyzeBtn'),
         selectTitle: document.getElementById('selectTitle'),
         resultsTitle: document.getElementById('resultsTitle'),
-        disclaimer: document.getElementById('disclaimer')
+        disclaimer: document.getElementById('disclaimer'),
+        selectAllText: document.getElementById('selectAllText'),
+        deselectAllText: document.getElementById('deselectAllText'),
+        footerTagline: document.getElementById('footerTagline'),
+        footerDisclaimer: document.getElementById('footerDisclaimer')
     };
+
+    // Select All / Deselect All Buttons
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', () => {
+            investors.forEach(investor => selectedInvestors.add(investor.id));
+            document.querySelectorAll('.investor-card').forEach(card => {
+                card.classList.add('selected');
+            });
+        });
+    }
+
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', () => {
+            selectedInvestors.clear();
+            document.querySelectorAll('.investor-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        });
+    }
 
     // Language Toggle
     const langBtns = document.querySelectorAll('.lang-btn');
@@ -347,6 +389,18 @@ document.addEventListener('DOMContentLoaded', () => {
         uiElements.resultsTitle.textContent = translations.resultsTitle[currentLang];
         if (uiElements.disclaimer) {
             uiElements.disclaimer.textContent = translations.disclaimer[currentLang];
+        }
+        if (uiElements.selectAllText) {
+            uiElements.selectAllText.textContent = translations.selectAll[currentLang];
+        }
+        if (uiElements.deselectAllText) {
+            uiElements.deselectAllText.textContent = translations.deselectAll[currentLang];
+        }
+        if (uiElements.footerTagline) {
+            uiElements.footerTagline.textContent = translations.footerTagline[currentLang];
+        }
+        if (uiElements.footerDisclaimer) {
+            uiElements.footerDisclaimer.textContent = translations.footerDisclaimer[currentLang];
         }
 
         renderInvestors();

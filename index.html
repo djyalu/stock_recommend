@@ -1,11 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Guru - Investment Wisdom</title>
+    <title>Stock Guru - 세계 최고 투자 대가들의 투자 조언</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="워렌 버핏, 피터 린치, 레이 달리오 등 세계적인 투자 대가들의 투자 철학을 바탕으로 주식 조언을 받아보세요. 다국어 지원 (한국어, 영어, 일본어, 중국어, 스페인어)">
+    <meta name="keywords" content="주식, 투자, 워렌 버핏, 피터 린치, 가치투자, 주식 조언, stock guru, investment">
+    <meta name="author" content="Stock Guru">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://djyalu.github.io/stock_guru/">
+    <meta property="og:title" content="Stock Guru - 투자 대가들의 지혜">
+    <meta property="og:description" content="워렌 버핏, 피터 린치 등 세계적인 투자 대가들의 투자 철학을 바탕으로 주식 조언을 받아보세요.">
+    <meta property="og:image" content="https://djyalu.github.io/stock_guru/assets/The Council of Legends - 1024x1024.webp">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://djyalu.github.io/stock_guru/">
+    <meta property="twitter:title" content="Stock Guru - 투자 대가들의 지혜">
+    <meta property="twitter:description" content="워렌 버핏, 피터 린치 등 세계적인 투자 대가들의 투자 철학을 바탕으로 주식 조언을 받아보세요.">
+    <meta property="twitter:image" content="https://djyalu.github.io/stock_guru/assets/The Council of Legends - 1024x1024.webp">
+    
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="apple-touch-icon" href="assets/The Council of Legends - 1024x1024.webp">
+    
+    <!-- Fonts & Styles -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -43,7 +68,19 @@
     </header>
 
     <main class="container">
-        <h2 id="selectTitle">Select Your Gurus</h2>
+        <div class="section-header">
+            <h2 id="selectTitle">Select Your Gurus</h2>
+            <div class="selection-buttons">
+                <button id="selectAllBtn" class="select-btn" aria-label="전체 선택">
+                    <span class="btn-icon">✓</span>
+                    <span id="selectAllText">전체 선택</span>
+                </button>
+                <button id="deselectAllBtn" class="select-btn" aria-label="전체 해제">
+                    <span class="btn-icon">✕</span>
+                    <span id="deselectAllText">전체 해제</span>
+                </button>
+            </div>
+        </div>
         <div id="investorGrid" class="investor-grid">
             <!-- Investors will be populated here by JS -->
         </div>
@@ -92,6 +129,28 @@
             </div>
         </section>
     </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <span class="footer-logo">📈 Stock Guru</span>
+                <p id="footerTagline" class="footer-tagline">투자 대가들의 지혜를 당신에게</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/djyalu/stock_guru" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p id="footerDisclaimer" class="footer-disclaimer">
+                ⚠️ 본 서비스는 교육 및 엔터테인먼트 목적으로만 제공됩니다. 투자 결정은 본인의 책임입니다.
+            </p>
+            <p class="footer-copyright">© 2024 Stock Guru. All rights reserved.</p>
+        </div>
+    </footer>
 
     <script src="script.js"></script>
 </body>
