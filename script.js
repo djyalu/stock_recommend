@@ -1100,80 +1100,103 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Dynamic Advice Logic
                 let adviceText = "";
+                let adviceSentiment = "neutral"; // positive, negative, neutral
 
                 // Custom logic per investor based on mock data
                 if (id === 'buffett') {
                     if (data.roe > 15 && data.debtToEquity < 50 && data.per < 20) {
                         adviceText = getLocalizedMessage('buffett_buy', stock);
+                        adviceSentiment = "positive";
                     } else if (data.per > 50) {
                         adviceText = getLocalizedMessage('buffett_expensive', stock);
+                        adviceSentiment = "negative";
                     } else {
                         adviceText = getLocalizedMessage('buffett_wait', stock);
+                        adviceSentiment = "neutral";
                     }
                 } else if (id === 'wood') {
                     if (data.revenueGrowth > 20) {
                         adviceText = getLocalizedMessage('wood_buy', stock);
+                        adviceSentiment = "positive";
                     } else {
                         adviceText = getLocalizedMessage('wood_sell', stock);
+                        adviceSentiment = "negative";
                     }
                 } else if (id === 'lynch') {
                     if (data.per < 25 && data.revenueGrowth > 10) {
                         adviceText = getLocalizedMessage('lynch_buy', stock);
+                        adviceSentiment = "positive";
                     } else {
                         adviceText = getLocalizedMessage('lynch_avoid', stock);
+                        adviceSentiment = "negative";
                     }
                 } else if (id === 'graham') {
                     if (data.pbr < 1.5 && data.per < 15) {
                         adviceText = getLocalizedMessage('graham_buy', stock);
+                        adviceSentiment = "positive";
                     } else {
                         adviceText = getLocalizedMessage('graham_expensive', stock);
+                        adviceSentiment = "negative";
                     }
                 } else if (id === 'dalio') {
                     // Dalio: Focus on diversification and sentiment (as a proxy for macro/market mood)
                     if (data.sentiment < 0.4) {
                         adviceText = getLocalizedMessage('dalio_bear', stock);
+                        adviceSentiment = "negative";
                     } else {
                         adviceText = getLocalizedMessage('dalio_neutral', stock);
+                        adviceSentiment = "neutral";
                     }
                 } else if (id === 'soros') {
                     // Soros: Momentum (Reflexivity) - if change is high, bet on it continuing
                     if (Math.abs(data.changePercent) > 3) {
                         adviceText = getLocalizedMessage('soros_momentum', stock);
+                        adviceSentiment = data.changePercent > 0 ? "positive" : "negative";
                     } else {
                         adviceText = getLocalizedMessage('soros_flat', stock);
+                        adviceSentiment = "neutral";
                     }
                 } else if (id === 'munger') {
                     // Munger: Quality (High ROE, Low Debt) - stricter than Buffett
                     if (data.roe > 20 && data.debtToEquity < 30) {
                         adviceText = getLocalizedMessage('munger_buy', stock);
+                        adviceSentiment = "positive";
                     } else {
                         adviceText = getLocalizedMessage('munger_pass', stock);
+                        adviceSentiment = "negative";
                     }
                 } else if (id === 'icahn') {
                     // Icahn: Activist - Look for underperforming companies (Low ROE) to fix
                     if (data.roe < 5) {
                         adviceText = getLocalizedMessage('icahn_activist', stock);
+                        adviceSentiment = "positive"; // Opportunity for activism
                     } else {
                         adviceText = getLocalizedMessage('icahn_watch', stock);
+                        adviceSentiment = "neutral";
                     }
                 } else if (id === 'ackman') {
                     // Ackman: Predictable cash flow (Good Revenue Growth + Reasonable PE)
                     if (data.revenueGrowth > 10 && data.per < 30) {
                         adviceText = getLocalizedMessage('ackman_buy', stock);
+                        adviceSentiment = "positive";
                     } else {
                         adviceText = getLocalizedMessage('ackman_pass', stock);
+                        adviceSentiment = "negative";
                     }
                 } else if (id === 'simons') {
                     // Simons: Quant/Patterns - High volume + volatility
                     if (parseInt(data.volume.replace(/,/g, '')) > 5000000 && Math.abs(data.changePercent) > 2) {
                         adviceText = getLocalizedMessage('simons_algo', stock);
+                        adviceSentiment = "positive";
                     } else {
                         adviceText = getLocalizedMessage('simons_noise', stock);
+                        adviceSentiment = "neutral";
                     }
                 } else {
                     // Fallback to generic template if no specific logic defined yet
                     const adviceFunc = investor.adviceTemplate[currentLang] || investor.adviceTemplate['en'];
                     adviceText = adviceFunc(stock);
+                    adviceSentiment = "neutral";
                 }
 
                 // Generate rationale based on investor's focus
@@ -1209,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }[currentLang];
 
                 const adviceCard = document.createElement('div');
-                adviceCard.className = 'advice-card';
+                adviceCard.className = `advice-card ${adviceSentiment}`;
                 adviceCard.innerHTML = `
                     <div class="advice-header">
                         <img src="${investor.image}" alt="${name}" onerror="this.src='https://via.placeholder.com/50/333/fff?text=${name.charAt(0)}'">
