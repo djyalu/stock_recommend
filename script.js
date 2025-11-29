@@ -1899,7 +1899,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Update verdict summary
-        updateVerdictSummary(positiveCount, negativeCount, neutralCount, stock);
+        updateVerdictSummary(positiveCount, negativeCount, neutralCount, stock, data);
 
         // Return dominant sentiment for history
         let dominant = 'neutral';
@@ -1909,7 +1909,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return { dominant, positiveCount, negativeCount, neutralCount };
     }
 
-    function updateVerdictSummary(positive, negative, neutral, stock) {
+    function updateVerdictSummary(positive, negative, neutral, stock, data) {
         const verdictSummary = document.getElementById('verdictSummary');
         const total = positive + negative + neutral;
         
@@ -1998,6 +1998,179 @@ document.addEventListener('DOMContentLoaded', () => {
 
         overallVerdict.className = 'overall-verdict ' + verdictClass;
         overallVerdict.textContent = verdictText;
+
+        // Generate AI Summary
+        generateAISummary(positive, negative, neutral, stock, data);
+    }
+
+    function generateAISummary(positive, negative, neutral, stock, data) {
+        const aiSummary = document.getElementById('aiSummary');
+        const aiContent = document.getElementById('aiSummaryContent');
+        const aiTitle = document.getElementById('aiSummaryTitle');
+        
+        const total = positive + negative + neutral;
+        if (total === 0 || !data) {
+            aiSummary.classList.add('hidden');
+            return;
+        }
+
+        aiSummary.classList.remove('hidden');
+
+        // Titles
+        const titles = {
+            en: 'AI Analysis Summary',
+            ko: 'AI 종합 분석',
+            ja: 'AI総合分析',
+            zh: 'AI综合分析',
+            es: 'Resumen de Análisis AI'
+        };
+        aiTitle.textContent = titles[currentLang] || titles.en;
+
+        // Analyze by investment style
+        const styleAnalysis = analyzeByStyle(data);
+        
+        // Generate summary text
+        const summaryParts = [];
+        const positivePercent = Math.round((positive / total) * 100);
+        const negativePercent = Math.round((negative / total) * 100);
+
+        // Main verdict
+        if (currentLang === 'ko') {
+            if (positivePercent >= 60) {
+                summaryParts.push(`<p>📈 <span class="ai-highlight">${stock}</span>에 대해 <span class="ai-highlight">${positivePercent}%의 구루가 긍정적</span>인 견해를 보였습니다.</p>`);
+            } else if (negativePercent >= 60) {
+                summaryParts.push(`<p>📉 <span class="ai-warning">${stock}</span>에 대해 <span class="ai-warning">${negativePercent}%의 구루가 부정적</span>인 견해를 보였습니다.</p>`);
+            } else {
+                summaryParts.push(`<p>⚖️ <span class="ai-neutral-text">${stock}</span>에 대해 구루들의 의견이 <span class="ai-neutral-text">나뉘고 있습니다</span> (긍정 ${positivePercent}%, 부정 ${negativePercent}%).</p>`);
+            }
+
+            // Key metrics analysis
+            const metricsAnalysis = [];
+            if (data.per < 15) metricsAnalysis.push(`PER ${data.per.toFixed(1)}로 저평가 구간`);
+            else if (data.per > 30) metricsAnalysis.push(`PER ${data.per.toFixed(1)}로 고평가 주의`);
+            
+            if (data.roe > 15) metricsAnalysis.push(`ROE ${data.roe.toFixed(1)}%로 수익성 양호`);
+            else if (data.roe < 8) metricsAnalysis.push(`ROE ${data.roe.toFixed(1)}%로 수익성 개선 필요`);
+            
+            if (data.pbr < 1.5) metricsAnalysis.push(`PBR ${data.pbr.toFixed(2)}로 자산가치 대비 저평가`);
+            
+            if (data.revenueGrowth > 15) metricsAnalysis.push(`매출성장률 ${data.revenueGrowth.toFixed(1)}%로 성장세 긍정적`);
+            else if (data.revenueGrowth < 5) metricsAnalysis.push(`매출성장률 ${data.revenueGrowth.toFixed(1)}%로 성장 둔화`);
+
+            if (metricsAnalysis.length > 0) {
+                summaryParts.push(`<p>📊 <strong>핵심 지표:</strong> ${metricsAnalysis.join(', ')}.</p>`);
+            }
+
+            // Style-based insights
+            summaryParts.push(`<p>💡 <strong>투자 스타일별 분석:</strong></p>`);
+            summaryParts.push('<div class="style-breakdown">');
+            
+            if (styleAnalysis.value.total > 0) {
+                const valueVerdict = styleAnalysis.value.positive > styleAnalysis.value.negative ? 'positive' : styleAnalysis.value.positive < styleAnalysis.value.negative ? 'negative' : 'neutral';
+                summaryParts.push(`<span class="style-tag ${valueVerdict}">💎 가치투자: ${styleAnalysis.value.positive}/${styleAnalysis.value.total} 긍정</span>`);
+            }
+            if (styleAnalysis.growth.total > 0) {
+                const growthVerdict = styleAnalysis.growth.positive > styleAnalysis.growth.negative ? 'positive' : styleAnalysis.growth.positive < styleAnalysis.growth.negative ? 'negative' : 'neutral';
+                summaryParts.push(`<span class="style-tag ${growthVerdict}">🚀 성장투자: ${styleAnalysis.growth.positive}/${styleAnalysis.growth.total} 긍정</span>`);
+            }
+            if (styleAnalysis.macro.total > 0) {
+                const macroVerdict = styleAnalysis.macro.positive > styleAnalysis.macro.negative ? 'positive' : styleAnalysis.macro.positive < styleAnalysis.macro.negative ? 'negative' : 'neutral';
+                summaryParts.push(`<span class="style-tag ${macroVerdict}">🌍 매크로: ${styleAnalysis.macro.positive}/${styleAnalysis.macro.total} 긍정</span>`);
+            }
+            if (styleAnalysis.quant.total > 0) {
+                const quantVerdict = styleAnalysis.quant.positive > styleAnalysis.quant.negative ? 'positive' : styleAnalysis.quant.positive < styleAnalysis.quant.negative ? 'negative' : 'neutral';
+                summaryParts.push(`<span class="style-tag ${quantVerdict}">🤖 퀀트: ${styleAnalysis.quant.positive}/${styleAnalysis.quant.total} 긍정</span>`);
+            }
+            if (styleAnalysis.activist.total > 0) {
+                const activistVerdict = styleAnalysis.activist.positive > styleAnalysis.activist.negative ? 'positive' : styleAnalysis.activist.positive < styleAnalysis.activist.negative ? 'negative' : 'neutral';
+                summaryParts.push(`<span class="style-tag ${activistVerdict}">⚔️ 행동주의: ${styleAnalysis.activist.positive}/${styleAnalysis.activist.total} 긍정</span>`);
+            }
+            summaryParts.push('</div>');
+
+            // Final recommendation
+            if (positivePercent >= 70) {
+                summaryParts.push(`<p>✅ <strong>결론:</strong> 대다수 구루가 긍정적으로 평가하고 있어 <span class="ai-highlight">투자 고려 가치가 있습니다</span>. 단, 본인의 투자 성향과 리스크 허용도를 고려하세요.</p>`);
+            } else if (negativePercent >= 70) {
+                summaryParts.push(`<p>⚠️ <strong>결론:</strong> 대다수 구루가 부정적으로 평가하고 있어 <span class="ai-warning">신중한 접근이 필요합니다</span>. 추가 리서치를 권장합니다.</p>`);
+            } else {
+                summaryParts.push(`<p>🔍 <strong>결론:</strong> 의견이 분분하므로 <span class="ai-neutral-text">추가적인 분석과 모니터링</span>을 권장합니다. 본인의 투자 철학에 맞는 구루의 의견을 참고하세요.</p>`);
+            }
+        } else {
+            // English version
+            if (positivePercent >= 60) {
+                summaryParts.push(`<p>📈 <span class="ai-highlight">${positivePercent}% of gurus are bullish</span> on <span class="ai-highlight">${stock}</span>.</p>`);
+            } else if (negativePercent >= 60) {
+                summaryParts.push(`<p>📉 <span class="ai-warning">${negativePercent}% of gurus are bearish</span> on <span class="ai-warning">${stock}</span>.</p>`);
+            } else {
+                summaryParts.push(`<p>⚖️ Gurus have <span class="ai-neutral-text">mixed opinions</span> on ${stock} (${positivePercent}% bullish, ${negativePercent}% bearish).</p>`);
+            }
+
+            // Key metrics
+            const metricsAnalysis = [];
+            if (data.per < 15) metricsAnalysis.push(`P/E ${data.per.toFixed(1)} (undervalued)`);
+            else if (data.per > 30) metricsAnalysis.push(`P/E ${data.per.toFixed(1)} (expensive)`);
+            if (data.roe > 15) metricsAnalysis.push(`ROE ${data.roe.toFixed(1)}% (strong)`);
+            if (data.revenueGrowth > 15) metricsAnalysis.push(`Revenue Growth ${data.revenueGrowth.toFixed(1)}% (growing)`);
+
+            if (metricsAnalysis.length > 0) {
+                summaryParts.push(`<p>📊 <strong>Key Metrics:</strong> ${metricsAnalysis.join(', ')}.</p>`);
+            }
+
+            // Style breakdown
+            summaryParts.push('<div class="style-breakdown">');
+            if (styleAnalysis.value.total > 0) summaryParts.push(`<span class="style-tag ${styleAnalysis.value.positive > styleAnalysis.value.negative ? 'positive' : 'neutral'}">💎 Value: ${styleAnalysis.value.positive}/${styleAnalysis.value.total}</span>`);
+            if (styleAnalysis.growth.total > 0) summaryParts.push(`<span class="style-tag ${styleAnalysis.growth.positive > styleAnalysis.growth.negative ? 'positive' : 'neutral'}">🚀 Growth: ${styleAnalysis.growth.positive}/${styleAnalysis.growth.total}</span>`);
+            if (styleAnalysis.macro.total > 0) summaryParts.push(`<span class="style-tag ${styleAnalysis.macro.positive > styleAnalysis.macro.negative ? 'positive' : 'neutral'}">🌍 Macro: ${styleAnalysis.macro.positive}/${styleAnalysis.macro.total}</span>`);
+            summaryParts.push('</div>');
+        }
+
+        aiContent.innerHTML = summaryParts.join('');
+    }
+
+    function analyzeByStyle(data) {
+        const result = {
+            value: { positive: 0, negative: 0, neutral: 0, total: 0 },
+            growth: { positive: 0, negative: 0, neutral: 0, total: 0 },
+            macro: { positive: 0, negative: 0, neutral: 0, total: 0 },
+            quant: { positive: 0, negative: 0, neutral: 0, total: 0 },
+            activist: { positive: 0, negative: 0, neutral: 0, total: 0 }
+        };
+
+        selectedInvestors.forEach(id => {
+            let style = 'other';
+            for (const [s, gurus] of Object.entries(guruStyles)) {
+                if (gurus.includes(id)) {
+                    style = s;
+                    break;
+                }
+            }
+
+            if (!result[style]) return;
+            result[style].total++;
+
+            // Determine sentiment based on data and guru style
+            if (style === 'value') {
+                if (data.per < 20 && data.roe > 12) result[style].positive++;
+                else if (data.per > 35) result[style].negative++;
+                else result[style].neutral++;
+            } else if (style === 'growth') {
+                if (data.revenueGrowth > 15) result[style].positive++;
+                else if (data.revenueGrowth < 5) result[style].negative++;
+                else result[style].neutral++;
+            } else if (style === 'macro') {
+                if (data.sentiment > 0.55) result[style].positive++;
+                else if (data.sentiment < 0.4) result[style].negative++;
+                else result[style].neutral++;
+            } else if (style === 'quant') {
+                if (Math.abs(data.changePercent) > 2) result[style].positive++;
+                else result[style].neutral++;
+            } else if (style === 'activist') {
+                if (data.roe < 10 && data.pbr < 2) result[style].positive++;
+                else result[style].neutral++;
+            }
+        });
+
+        return result;
     }
 
     // Helper for localized dynamic messages
@@ -2555,7 +2728,88 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDataStatus();
     renderHistory();
     updateFilterLabels();
+    initThemeToggle();
+    initShareFeature();
     console.log('Stock Guru: Initialization complete.');
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registered:', reg.scope))
+            .catch(err => console.log('Service Worker registration failed:', err));
+    }
+
+    // Theme Toggle
+    function initThemeToggle() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        const themeBtn = document.getElementById('themeToggle');
+        if (themeBtn) {
+            updateThemeButton(savedTheme);
+            themeBtn.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeButton(newTheme);
+            });
+        }
+    }
+
+    function updateThemeButton(theme) {
+        const themeBtn = document.getElementById('themeToggle');
+        if (themeBtn) {
+            themeBtn.innerHTML = theme === 'dark' ? '☀️' : '🌙';
+            themeBtn.title = theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+        }
+    }
+
+    // Share Feature
+    function initShareFeature() {
+        const shareBtn = document.getElementById('shareBtn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', shareResults);
+        }
+    }
+
+    async function shareResults() {
+        const resultSection = document.getElementById('resultSection');
+        if (!resultSection || resultSection.classList.contains('hidden')) {
+            showToast(currentLang === 'ko' ? '먼저 주식을 분석하세요!' : 'Analyze a stock first!');
+            return;
+        }
+
+        const stockName = document.getElementById('companyName').textContent;
+        const verdict = document.getElementById('overallVerdict').textContent;
+        
+        const shareData = {
+            title: 'Stock Guru Analysis',
+            text: `📊 ${stockName} 분석 결과\n${verdict}\n\n`,
+            url: window.location.href
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    copyToClipboard(shareData);
+                }
+            }
+        } else {
+            copyToClipboard(shareData);
+        }
+    }
+
+    function copyToClipboard(data) {
+        const text = `${data.text}${data.url}`;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(currentLang === 'ko' ? '📋 클립보드에 복사되었습니다!' : '📋 Copied to clipboard!');
+        }).catch(() => {
+            showToast(currentLang === 'ko' ? '복사 실패' : 'Copy failed');
+        });
+    }
 });
 
 

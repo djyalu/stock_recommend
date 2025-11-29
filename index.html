@@ -26,9 +26,13 @@
     <meta property="twitter:description" content="워렌 버핏, 피터 린치 등 세계적인 투자 대가들의 투자 철학을 바탕으로 주식 조언을 받아보세요.">
     <meta property="twitter:image" content="https://djyalu.github.io/stock_guru/assets/The Council of Legends - 1024x1024.webp">
     
-    <!-- Favicon -->
+    <!-- Favicon & PWA -->
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-    <link rel="apple-touch-icon" href="assets/The Council of Legends - 1024x1024.webp">
+    <link rel="apple-touch-icon" href="assets/favicon.svg">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00e676">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Fonts & Styles -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,6 +44,12 @@
 <body>
     <header class="hero">
         <div class="header-controls">
+            <button id="themeToggle" class="control-btn" aria-label="테마 변경" title="테마 변경">
+                ☀️
+            </button>
+            <button id="shareBtn" class="control-btn" aria-label="결과 공유" title="결과 공유">
+                📤
+            </button>
             <button id="settingsBtn" class="settings-btn" aria-label="설정">
                 ⚙️
             </button>
@@ -214,6 +224,15 @@
                     </div>
                 </div>
                 <div id="overallVerdict" class="overall-verdict"></div>
+                
+                <!-- AI Summary -->
+                <div id="aiSummary" class="ai-summary hidden">
+                    <div class="ai-summary-header">
+                        <span class="ai-icon">🤖</span>
+                        <span id="aiSummaryTitle">AI 종합 분석</span>
+                    </div>
+                    <div id="aiSummaryContent" class="ai-summary-content"></div>
+                </div>
             </div>
 
             <div id="resultsGrid" class="results-grid">
