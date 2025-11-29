@@ -265,33 +265,6 @@ p.subtitle {
 
 h2 {
     font-size: 2rem;
-    margin-bottom: 2rem;
-    text-align: center;
-}
-
-/* Investor Grid */
-.investor-grid {
-    display: grid;
-    transition: border-color 0.3s;
-}
-
-.investor-card.selected img {
-    border-color: var(--primary-color);
-}
-
-.investor-card h3 {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-}
-
-.investor-card p {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-}
-
-/* Results Section */
-.results-section {
-    display: none;
     /* Hidden by default */
     animation: fadeIn 0.5s ease;
 }
