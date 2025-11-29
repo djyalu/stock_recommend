@@ -969,18 +969,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                     console.log('Using REAL financial data from FMP API');
                 } else {
-                    // Simulation data (fallback)
+                    // Simulation data (fallback) - Use seeded random for consistency
+                    // Create a simple seeded random generator based on ticker
+                    function seededRandom(seed) {
+                        let value = seed;
+                        return function() {
+                            value = (value * 9301 + 49297) % 233280;
+                            return value / 233280;
+                        };
+                    }
+                    
+                    // Generate seed from ticker string
+                    let seed = 0;
+                    for (let i = 0; i < ticker.length; i++) {
+                        seed = ((seed << 5) - seed) + ticker.charCodeAt(i);
+                        seed = seed & seed; // Convert to 32bit integer
+                    }
+                    seed = Math.abs(seed);
+                    
+                    const random = seededRandom(seed);
+                    
                     financialData = {
-                        per: Math.abs(currentPrice / (Math.random() * 10 + 1)),
-                        pbr: Math.random() * 5 + 1,
-                        roe: Math.random() * 20 + 5,
-                        debtToEquity: Math.random() * 100,
-                        revenueGrowth: Math.random() * 20,
-                        dividendYield: Math.random() * 3,
-                        eps: currentPrice / (Math.random() * 20 + 5),
+                        per: Math.abs(currentPrice / (random() * 10 + 1)),
+                        pbr: random() * 5 + 1,
+                        roe: random() * 20 + 5,
+                        debtToEquity: random() * 100,
+                        revenueGrowth: random() * 20,
+                        dividendYield: random() * 3,
+                        eps: currentPrice / (random() * 20 + 5),
                         marketCap: 0
                     };
-                    console.log('Using SIMULATION financial data');
+                    
+                    // Use seeded random for sentiment too
+                    const sentimentRandom = random();
+                    financialData.sentiment = changePercent > 0 
+                        ? 0.6 + (sentimentRandom * 0.3) 
+                        : 0.4 - (sentimentRandom * 0.3);
+                    
+                    console.log('Using SIMULATION financial data (seeded for consistency)');
                 }
 
                 // Update data source badge
@@ -993,7 +1019,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     changePercent: changePercent,
                     volume: volume,
                     ...financialData,
-                    sentiment: changePercent > 0 ? 0.6 + (Math.random() * 0.3) : 0.4 - (Math.random() * 0.3),
                     isRealData: isRealData
                 };
             }
