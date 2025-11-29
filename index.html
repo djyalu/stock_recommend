@@ -101,6 +101,12 @@
                 </div>
                 <button id="analyzeBtn" class="primary-btn">Get Advice</button>
             </div>
+
+            <!-- Recent History -->
+            <div id="historySection" class="history-section hidden">
+                <span id="historyLabel" class="history-label">최근 분석:</span>
+                <div id="historyList" class="history-list"></div>
+            </div>
         </div>
     </header>
 
@@ -118,6 +124,20 @@
                 </button>
             </div>
         </div>
+        
+        <!-- Guru Style Filters -->
+        <div class="filter-section">
+            <span id="filterLabel" class="filter-label">스타일 필터:</span>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-style="all" id="filterAll">전체</button>
+                <button class="filter-btn" data-style="value" id="filterValue">💎 가치투자</button>
+                <button class="filter-btn" data-style="growth" id="filterGrowth">🚀 성장투자</button>
+                <button class="filter-btn" data-style="macro" id="filterMacro">🌍 매크로</button>
+                <button class="filter-btn" data-style="quant" id="filterQuant">🤖 퀀트</button>
+                <button class="filter-btn" data-style="activist" id="filterActivist">⚔️ 행동주의</button>
+            </div>
+        </div>
+        
         <div id="investorGrid" class="investor-grid">
             <!-- Investors will be populated here by JS -->
         </div>

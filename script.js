@@ -4,6 +4,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const getAvatarUrl = (name, bg = '1a1a1a', color = '00e676') => 
         `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=100&background=${bg}&color=${color}&bold=true`;
 
+    // Guru styles for filtering
+    const guruStyles = {
+        value: ['buffett', 'graham', 'munger', 'klarman', 'greenblatt', 'pabrai', 'li_lu', 'templeton', 'einhorn'],
+        growth: ['lynch', 'wood', 'fisher', 'smith'],
+        macro: ['dalio', 'soros', 'druckenmiller', 'tudor_jones', 'marks', 'bacon', 'fink', 'swensen'],
+        quant: ['simons', 'griffin'],
+        activist: ['icahn', 'ackman', 'loeb', 'burry', 'miller', 'robertson', 'steinhardt', 'jones', 'bogle']
+    };
+
     const investors = [
         {
             id: 'buffett',
@@ -385,12 +394,112 @@ document.addEventListener('DOMContentLoaded', () => {
     const stockSummary = document.getElementById('stockSummary');
     const newsSection = document.getElementById('newsSection');
     const newsGrid = document.getElementById('newsGrid');
+    const historySection = document.getElementById('historySection');
+    const historyList = document.getElementById('historyList');
+    const filterButtons = document.querySelectorAll('.filter-btn');
     const selectedInvestors = new Set();
 
     let currentLang = 'ko';
     let currentFocus = -1;
     let debounceTimer;
     let isRealData = false;
+    let currentFilter = 'all';
+    
+    // ========== History Functions ==========
+    const HISTORY_KEY = 'stock_guru_history';
+    const MAX_HISTORY = 5;
+
+    function getHistory() {
+        try {
+            return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveToHistory(item) {
+        let history = getHistory();
+        // Remove if already exists
+        history = history.filter(h => h.ticker !== item.ticker);
+        // Add to front
+        history.unshift(item);
+        // Keep only last MAX_HISTORY
+        history = history.slice(0, MAX_HISTORY);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const history = getHistory();
+        if (history.length === 0) {
+            historySection.classList.add('hidden');
+            return;
+        }
+
+        historySection.classList.remove('hidden');
+        historyList.innerHTML = '';
+
+        const labels = {
+            en: 'Recent:', ko: '최근 분석:', ja: '最近:', zh: '最近:', es: 'Reciente:'
+        };
+        document.getElementById('historyLabel').textContent = labels[currentLang] || labels.en;
+
+        history.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `
+                <span class="ticker">${item.ticker}</span>
+                <span class="name">${item.name.substring(0, 10)}${item.name.length > 10 ? '...' : ''}</span>
+                <span class="sentiment ${item.sentiment}">${item.sentimentIcon}</span>
+            `;
+            div.addEventListener('click', () => {
+                stockInput.value = item.name;
+                analyzeBtn.click();
+            });
+            historyList.appendChild(div);
+        });
+    }
+
+    // ========== Filter Functions ==========
+    function getGuruStyle(id) {
+        for (const [style, gurus] of Object.entries(guruStyles)) {
+            if (gurus.includes(id)) return style;
+        }
+        return 'other';
+    }
+
+    function applyFilter(style) {
+        currentFilter = style;
+        filterButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.style === style);
+        });
+        renderInvestors();
+    }
+
+    // Filter button labels
+    const filterLabels = {
+        en: { label: 'Style Filter:', all: 'All', value: '💎 Value', growth: '🚀 Growth', macro: '🌍 Macro', quant: '🤖 Quant', activist: '⚔️ Activist' },
+        ko: { label: '스타일 필터:', all: '전체', value: '💎 가치투자', growth: '🚀 성장투자', macro: '🌍 매크로', quant: '🤖 퀀트', activist: '⚔️ 행동주의' },
+        ja: { label: 'スタイル:', all: '全て', value: '💎 バリュー', growth: '🚀 成長', macro: '🌍 マクロ', quant: '🤖 クオンツ', activist: '⚔️ アクティビスト' },
+        zh: { label: '风格筛选:', all: '全部', value: '💎 价值', growth: '🚀 成长', macro: '🌍 宏观', quant: '🤖 量化', activist: '⚔️ 激进' },
+        es: { label: 'Filtro:', all: 'Todos', value: '💎 Valor', growth: '🚀 Crecimiento', macro: '🌍 Macro', quant: '🤖 Quant', activist: '⚔️ Activista' }
+    };
+
+    function updateFilterLabels() {
+        const labels = filterLabels[currentLang] || filterLabels.en;
+        document.getElementById('filterLabel').textContent = labels.label;
+        document.getElementById('filterAll').textContent = labels.all;
+        document.getElementById('filterValue').textContent = labels.value;
+        document.getElementById('filterGrowth').textContent = labels.growth;
+        document.getElementById('filterMacro').textContent = labels.macro;
+        document.getElementById('filterQuant').textContent = labels.quant;
+        document.getElementById('filterActivist').textContent = labels.activist;
+    }
+
+    // Filter button event listeners
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => applyFilter(btn.dataset.style));
+    });
 
     // ========== Financial Modeling Prep API ==========
     const FMP_BASE_URL = 'https://financialmodelingprep.com/api/v3';
@@ -605,6 +714,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update settings modal translations
         updateSettingsTranslations();
 
+        // Update filter and history labels
+        updateFilterLabels();
+        renderHistory();
+
         renderInvestors();
 
         // If results are visible, re-run analysis to update language
@@ -627,7 +740,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderInvestors() {
         investorGrid.innerHTML = '';
-        investors.forEach(investor => {
+        
+        // Filter investors based on current filter
+        const filteredInvestors = currentFilter === 'all' 
+            ? investors 
+            : investors.filter(inv => guruStyles[currentFilter]?.includes(inv.id));
+        
+        filteredInvestors.forEach(investor => {
             const card = document.createElement('div');
             card.className = 'investor-card';
             if (selectedInvestors.has(investor.id)) {
@@ -945,11 +1064,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 3. Render Stock Summary & Advice (Prioritize these)
             renderStockSummary(stockData);
-            generateAdvice(name, stockData);
+            const verdictResult = generateAdvice(name, stockData);
 
             // Show Sections immediately
             resultsSection.style.display = 'block';
             stockSummary.classList.remove('hidden');
+
+            // Save to history
+            saveToHistory({
+                ticker: stockData.ticker,
+                name: name,
+                sentiment: verdictResult.dominant,
+                sentimentIcon: verdictResult.dominant === 'positive' ? '📈' : verdictResult.dominant === 'negative' ? '📉' : '⏸️'
+            });
 
             // Scroll to summary
             stockSummary.scrollIntoView({ behavior: 'smooth' });
@@ -1610,6 +1737,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update verdict summary
         updateVerdictSummary(positiveCount, negativeCount, neutralCount, stock);
+
+        // Return dominant sentiment for history
+        let dominant = 'neutral';
+        if (positiveCount > negativeCount && positiveCount > neutralCount) dominant = 'positive';
+        else if (negativeCount > positiveCount && negativeCount > neutralCount) dominant = 'negative';
+        
+        return { dominant, positiveCount, negativeCount, neutralCount };
     }
 
     function updateVerdictSummary(positive, negative, neutral, stock) {
@@ -2256,6 +2390,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     updateLanguage();
     updateDataStatus();
+    renderHistory();
+    updateFilterLabels();
     console.log('Stock Guru: Initialization complete.');
 });
 

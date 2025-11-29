@@ -167,6 +167,60 @@ p.subtitle {
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
+/* ========== History Section ========== */
+.history-section {
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.history-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.history-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.history-item {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.history-item:hover {
+    background: rgba(0, 230, 118, 0.2);
+    border-color: var(--primary-color);
+}
+
+.history-item .ticker {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.history-item .sentiment {
+    font-size: 0.7rem;
+}
+
+.history-item .sentiment.positive { color: #4ade80; }
+.history-item .sentiment.negative { color: #f87171; }
+.history-item .sentiment.neutral { color: #fbbf24; }
+
 .input-wrapper {
     position: relative;
     flex-grow: 1;
@@ -295,6 +349,55 @@ h2 {
     margin-bottom: 2rem;
     text-align: center;
     animation: fadeIn 0.5s ease;
+}
+
+/* ========== Filter Section ========== */
+.filter-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.filter-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: #000;
+    border-color: var(--primary-color);
+    font-weight: 600;
 }
 
 /* ========== Investor Grid ========== */
