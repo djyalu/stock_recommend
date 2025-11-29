@@ -1115,6 +1115,24 @@ h2 {
     border-left: 2px solid var(--primary-color);
 }
 
+.news-summary-ko {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 230, 118, 0.08);
+    border-radius: 6px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.news-headline-original {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    font-style: italic;
+}
+
 .news-summary {
     font-size: 0.9rem;
     color: var(--text-muted);

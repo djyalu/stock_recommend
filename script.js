@@ -1160,58 +1160,100 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Simple translation/summary for news headlines
+    // Generate Korean summary for news headlines
     function summarizeHeadline(headline, lang) {
         if (lang === 'en') return headline;
         
-        // Common financial terms translation
-        const translations = {
-            'rises': { ko: '상승', ja: '上昇', zh: '上涨', es: 'sube' },
-            'falls': { ko: '하락', ja: '下落', zh: '下跌', es: 'cae' },
-            'drops': { ko: '하락', ja: '下落', zh: '下跌', es: 'cae' },
-            'gains': { ko: '상승', ja: '上昇', zh: '上涨', es: 'gana' },
-            'jumps': { ko: '급등', ja: '急騰', zh: '飙升', es: 'salta' },
-            'surges': { ko: '급등', ja: '急騰', zh: '飙升', es: 'dispara' },
-            'plunges': { ko: '급락', ja: '急落', zh: '暴跌', es: 'desploma' },
-            'stock': { ko: '주식', ja: '株', zh: '股票', es: 'acción' },
-            'shares': { ko: '주가', ja: '株価', zh: '股价', es: 'acciones' },
-            'market': { ko: '시장', ja: '市場', zh: '市场', es: 'mercado' },
-            'earnings': { ko: '실적', ja: '決算', zh: '业绩', es: 'ganancias' },
-            'revenue': { ko: '매출', ja: '売上', zh: '营收', es: 'ingresos' },
-            'profit': { ko: '수익', ja: '利益', zh: '利润', es: 'beneficio' },
-            'loss': { ko: '손실', ja: '損失', zh: '亏损', es: 'pérdida' },
-            'buy': { ko: '매수', ja: '買い', zh: '买入', es: 'compra' },
-            'sell': { ko: '매도', ja: '売り', zh: '卖出', es: 'venta' },
-            'upgrade': { ko: '상향', ja: '格上げ', zh: '上调', es: 'mejora' },
-            'downgrade': { ko: '하향', ja: '格下げ', zh: '下调', es: 'rebaja' },
-            'target': { ko: '목표가', ja: '目標株価', zh: '目标价', es: 'objetivo' },
-            'analyst': { ko: '애널리스트', ja: 'アナリスト', zh: '分析师', es: 'analista' },
-            'record': { ko: '신고가', ja: '最高値', zh: '新高', es: 'récord' },
-            'high': { ko: '고점', ja: '高値', zh: '高位', es: 'alto' },
-            'low': { ko: '저점', ja: '安値', zh: '低位', es: 'bajo' }
-        };
+        const lowerHeadline = headline.toLowerCase();
+        
+        // Pattern-based summary generation
+        const patterns = [
+            // Price movements
+            { pattern: /(?:stock|shares?)\s+(?:rises?|jumps?|surges?|gains?|soars?)/i, 
+              summary: { ko: '📈 주가 상승 소식', ja: '📈 株価上昇', zh: '📈 股价上涨', es: '📈 Acción sube' }},
+            { pattern: /(?:stock|shares?)\s+(?:falls?|drops?|plunges?|declines?|tumbles?)/i, 
+              summary: { ko: '📉 주가 하락 소식', ja: '📉 株価下落', zh: '📉 股价下跌', es: '📉 Acción cae' }},
+            { pattern: /hits?\s+(?:record|all-time)\s+high/i, 
+              summary: { ko: '🎯 사상 최고가 달성', ja: '🎯 過去最高値更新', zh: '🎯 创历史新高', es: '🎯 Récord histórico' }},
+            
+            // Earnings & Revenue
+            { pattern: /(?:beats?|exceeds?|tops?)\s+(?:earnings?|estimates?|expectations?)/i, 
+              summary: { ko: '✅ 실적 예상치 상회', ja: '✅ 予想を上回る', zh: '✅ 超预期', es: '✅ Supera expectativas' }},
+            { pattern: /(?:misses?|falls?\s+short)\s+(?:earnings?|estimates?|expectations?)/i, 
+              summary: { ko: '❌ 실적 예상치 하회', ja: '❌ 予想を下回る', zh: '❌ 低于预期', es: '❌ Por debajo de expectativas' }},
+            { pattern: /earnings|quarterly\s+results?|financial\s+results?/i, 
+              summary: { ko: '📊 실적 발표 관련', ja: '📊 決算発表', zh: '📊 业绩公告', es: '📊 Resultados financieros' }},
+            { pattern: /revenue\s+(?:grows?|increases?|rises?)/i, 
+              summary: { ko: '💰 매출 성장 발표', ja: '💰 売上増加', zh: '💰 营收增长', es: '💰 Ingresos crecen' }},
+            
+            // Analyst ratings
+            { pattern: /upgrade[sd]?|raises?\s+(?:target|rating|price)/i, 
+              summary: { ko: '⬆️ 애널리스트 목표가 상향', ja: '⬆️ 目標株価引き上げ', zh: '⬆️ 上调目标价', es: '⬆️ Mejora calificación' }},
+            { pattern: /downgrade[sd]?|lowers?\s+(?:target|rating|price)|cuts?\s+(?:target|rating)/i, 
+              summary: { ko: '⬇️ 애널리스트 목표가 하향', ja: '⬇️ 目標株価引き下げ', zh: '⬇️ 下调目标价', es: '⬇️ Rebaja calificación' }},
+            { pattern: /(?:buy|strong\s+buy)\s+rating/i, 
+              summary: { ko: '🟢 매수 추천 등급', ja: '🟢 買い推奨', zh: '🟢 买入评级', es: '🟢 Calificación compra' }},
+            { pattern: /(?:sell|underperform)\s+rating/i, 
+              summary: { ko: '🔴 매도 추천 등급', ja: '🔴 売り推奨', zh: '🔴 卖出评级', es: '🔴 Calificación venta' }},
+            
+            // M&A & Business
+            { pattern: /(?:acquires?|acquisition|to\s+buy|buying)/i, 
+              summary: { ko: '🤝 인수합병(M&A) 소식', ja: '🤝 M&A関連', zh: '🤝 收购消息', es: '🤝 Adquisición' }},
+            { pattern: /(?:merger|merging|to\s+merge)/i, 
+              summary: { ko: '🔄 합병 관련 소식', ja: '🔄 合併関連', zh: '🔄 合并消息', es: '🔄 Fusión' }},
+            { pattern: /(?:partnership|partners?\s+with|deal\s+with)/i, 
+              summary: { ko: '🤝 파트너십 체결', ja: '🤝 提携発表', zh: '🤝 合作协议', es: '🤝 Asociación' }},
+            { pattern: /(?:layoffs?|job\s+cuts?|workforce\s+reduction)/i, 
+              summary: { ko: '⚠️ 구조조정/감원 발표', ja: '⚠️ 人員削減', zh: '⚠️ 裁员消息', es: '⚠️ Recortes de empleo' }},
+            
+            // Market & Trading
+            { pattern: /insider\s+(?:sold|selling|buys?|buying)/i, 
+              summary: { ko: '👔 내부자 거래 공시', ja: '👔 インサイダー取引', zh: '👔 内部交易', es: '👔 Operación insider' }},
+            { pattern: /sec\s+filing|regulatory\s+filing/i, 
+              summary: { ko: '📋 SEC 공시 제출', ja: '📋 SEC届出', zh: '📋 SEC申报', es: '📋 Presentación SEC' }},
+            { pattern: /dividend/i, 
+              summary: { ko: '💵 배당 관련 소식', ja: '💵 配当関連', zh: '💵 股息消息', es: '💵 Dividendo' }},
+            { pattern: /stock\s+split|share\s+split/i, 
+              summary: { ko: '✂️ 주식 분할 발표', ja: '✂️ 株式分割', zh: '✂️ 股票拆分', es: '✂️ División de acciones' }},
+            { pattern: /buyback|repurchase/i, 
+              summary: { ko: '🔄 자사주 매입 발표', ja: '🔄 自社株買い', zh: '🔄 回购股票', es: '🔄 Recompra de acciones' }},
+            
+            // General news
+            { pattern: /most\s+active|top\s+(?:gainers?|losers?)/i, 
+              summary: { ko: '📊 시장 동향/거래량 상위', ja: '📊 売買代金上位', zh: '📊 成交活跃', es: '📊 Más activas' }},
+            { pattern: /stocks?\s+to\s+(?:watch|buy)/i, 
+              summary: { ko: '👀 주목할 종목 추천', ja: '👀 注目銘柄', zh: '👀 值得关注', es: '👀 Acciones a observar' }}
+        ];
 
-        // Generate a brief Korean summary based on keywords
-        let summary = headline;
-        let keywords = [];
-
-        for (const [eng, trans] of Object.entries(translations)) {
-            if (headline.toLowerCase().includes(eng)) {
-                keywords.push(trans[lang] || trans.ko);
+        // Find matching pattern
+        for (const { pattern, summary } of patterns) {
+            if (pattern.test(headline)) {
+                const localSummary = summary[lang] || summary.ko;
+                return `<div class="news-summary-ko">${localSummary}</div><div class="news-headline-original">${headline}</div>`;
             }
         }
 
-        if (keywords.length > 0 && lang !== 'en') {
-            const summaryLabels = {
-                ko: '핵심:',
-                ja: '要点:',
-                zh: '要点:',
-                es: 'Clave:'
-            };
-            return `${headline}\n<span class="news-keywords">${summaryLabels[lang] || '핵심:'} ${keywords.slice(0, 3).join(', ')}</span>`;
+        // Fallback: keyword extraction
+        const keywords = {
+            'rises': '상승', 'falls': '하락', 'drops': '하락', 'gains': '상승',
+            'jumps': '급등', 'surges': '급등', 'plunges': '급락', 'stock': '주식',
+            'earnings': '실적', 'revenue': '매출', 'profit': '수익', 'loss': '손실',
+            'buy': '매수', 'sell': '매도', 'upgrade': '상향', 'downgrade': '하향',
+            'target': '목표가', 'analyst': '애널리스트', 'market': '시장'
+        };
+
+        let foundKeywords = [];
+        for (const [eng, kor] of Object.entries(keywords)) {
+            if (lowerHeadline.includes(eng)) {
+                foundKeywords.push(kor);
+            }
         }
 
-        return headline;
+        if (foundKeywords.length > 0 && lang !== 'en') {
+            return `<div class="news-summary-ko">📰 ${foundKeywords.slice(0, 3).join(' · ')} 관련</div><div class="news-headline-original">${headline}</div>`;
+        }
+
+        return `<div class="news-headline-original">${headline}</div>`;
     }
 
     function formatNewsDate(date) {
