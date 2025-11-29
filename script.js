@@ -979,7 +979,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         };
                     }
                     
-                    // Generate seed from ticker string
+                    // Generate seed from ticker string (consistent for same ticker)
                     let seed = 0;
                     for (let i = 0; i < ticker.length; i++) {
                         seed = ((seed << 5) - seed) + ticker.charCodeAt(i);
@@ -989,22 +989,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const random = seededRandom(seed);
                     
+                    // Use fixed base price for simulation (not currentPrice which changes)
+                    // This ensures PER and EPS are consistent
+                    const basePrice = 100 + (random() * 200); // Fixed for this ticker
+                    
                     financialData = {
-                        per: Math.abs(currentPrice / (random() * 10 + 1)),
+                        per: Math.abs(basePrice / (random() * 10 + 1)),
                         pbr: random() * 5 + 1,
                         roe: random() * 20 + 5,
                         debtToEquity: random() * 100,
                         revenueGrowth: random() * 20,
                         dividendYield: random() * 3,
-                        eps: currentPrice / (random() * 20 + 5),
+                        eps: basePrice / (random() * 20 + 5),
                         marketCap: 0
                     };
                     
-                    // Use seeded random for sentiment too
+                    // Use seeded random for sentiment (fixed for this ticker)
                     const sentimentRandom = random();
-                    financialData.sentiment = changePercent > 0 
-                        ? 0.6 + (sentimentRandom * 0.3) 
-                        : 0.4 - (sentimentRandom * 0.3);
+                    // Use fixed sentiment based on seed, not actual price change
+                    financialData.sentiment = sentimentRandom * 0.4 + 0.5; // 0.5 to 0.9 range
+                    
+                    // Also fix changePercent for simulation consistency
+                    // This ensures guru advice is consistent
+                    const changePercentRandom = random();
+                    financialData.simulatedChangePercent = (changePercentRandom - 0.5) * 6; // -3% to +3% range
                     
                     console.log('Using SIMULATION financial data (seeded for consistency)');
                 }
@@ -1016,7 +1024,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     ticker: meta.symbol,
                     price: currentPrice,
                     change: change,
-                    changePercent: changePercent,
+                    // Use simulated changePercent if available, otherwise use real one
+                    changePercent: financialData.simulatedChangePercent !== undefined 
+                        ? financialData.simulatedChangePercent 
+                        : changePercent,
                     volume: volume,
                     ...financialData,
                     isRealData: isRealData
