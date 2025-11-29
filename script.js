@@ -1496,7 +1496,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (id === 'greenblatt') {
                     rationale = `${createMetric('roe')} ${createMetric('per')}`;
                 } else if (id === 'bogle') {
-                    rationale = `Index Investing - Individual stock analysis not applicable`;
+                    const bogleMsg = {
+                        en: 'Index Investing - Individual stock analysis not applicable',
+                        ko: '인덱스 투자 - 개별 종목 분석 불필요',
+                        ja: 'インデックス投資 - 個別銘柄分析は不要',
+                        zh: '指数投资 - 不需要个股分析',
+                        es: 'Inversión en índices - Análisis individual no aplicable'
+                    }[currentLang] || 'Index Investing - Individual stock analysis not applicable';
+                    rationale = bogleMsg;
                 } else if (id === 'fisher') {
                     rationale = `${createMetric('revenueGrowth')} ${createMetric('roe')}`;
                 } else if (id === 'einhorn') {
@@ -1516,15 +1523,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (id === 'robertson') {
                     rationale = `${createMetric('roe')} ${createMetric('per')}`;
                 } else if (id === 'fink') {
-                    rationale = `Long-term ESG Focus - ${createMetric('roe')}`;
+                    const finkLabel = {
+                        en: 'Long-term ESG Focus',
+                        ko: '장기 ESG 중심',
+                        ja: '長期ESG重視',
+                        zh: '长期ESG聚焦',
+                        es: 'Enfoque ESG a largo plazo'
+                    }[currentLang] || 'Long-term ESG Focus';
+                    rationale = `${finkLabel} - ${createMetric('roe')}`;
                 } else if (id === 'jones') {
-                    rationale = `Hedge Strategy - ${createMetric('changePercent')}`;
+                    const jonesLabel = {
+                        en: 'Hedge Strategy',
+                        ko: '헤지 전략',
+                        ja: 'ヘッジ戦略',
+                        zh: '对冲策略',
+                        es: 'Estrategia de cobertura'
+                    }[currentLang] || 'Hedge Strategy';
+                    rationale = `${jonesLabel} - ${createMetric('changePercent')}`;
                 } else if (id === 'steinhardt') {
                     rationale = `${createMetric('changePercent')}`;
                 } else if (id === 'bacon') {
                     rationale = `${createMetric('sentiment')} ${createMetric('changePercent')}`;
                 } else if (id === 'swensen') {
-                    rationale = `Diversification Focus - Asset allocation strategy`;
+                    const swensenMsg = {
+                        en: 'Diversification Focus - Asset allocation strategy',
+                        ko: '분산투자 중심 - 자산배분 전략',
+                        ja: '分散投資重視 - 資産配分戦略',
+                        zh: '分散投资重点 - 资产配置策略',
+                        es: 'Enfoque de diversificación - Estrategia de asignación de activos'
+                    }[currentLang] || 'Diversification Focus - Asset allocation strategy';
+                    rationale = swensenMsg;
                 }
 
                 const rationaleLabel = {
