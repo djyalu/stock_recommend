@@ -97,7 +97,7 @@ body {
     justify-content: center;
     align-items: center;
     text-align: center;
-    background: url('assets/The Council of Legends - 1024x1024.webp') no-repeat center center/cover;
+    background: url('assets/32_Investment_Gurus_Ultimate_Hall.png') no-repeat center center/cover;
     padding: 2rem;
 }
 
@@ -315,7 +315,7 @@ h2 {
     transition: all 0.3s ease;
     border: 2px solid transparent;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .investor-card::before {
@@ -334,6 +334,7 @@ h2 {
 .investor-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 30px rgba(0, 230, 118, 0.2);
+    z-index: 100;
 }
 
 .investor-card:hover::before {
@@ -386,6 +387,136 @@ h2 {
     color: var(--text-muted);
     position: relative;
     z-index: 1;
+}
+
+/* ========== Investor Tooltip ========== */
+.investor-tooltip {
+    position: absolute;
+    bottom: calc(100% + 15px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    background-color: #0d0d0d;
+    border: 2px solid #00e676;
+    border-radius: 12px;
+    padding: 1.2rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: 0 0 0 4px #0d0d0d, 0 20px 60px rgba(0, 0, 0, 1), 0 0 30px rgba(0, 230, 118, 0.3);
+}
+
+.investor-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 10px solid transparent;
+    border-top-color: #00e676;
+}
+
+.investor-card:hover .investor-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltip-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+}
+
+.tooltip-header h4 {
+    font-size: 0.9rem;
+    margin: 0;
+    color: var(--text-color);
+}
+
+.tooltip-header .tooltip-title {
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    margin-top: 2px;
+}
+
+.tooltip-section {
+    margin-bottom: 0.6rem;
+}
+
+.tooltip-section:last-child {
+    margin-bottom: 0;
+}
+
+.tooltip-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.tooltip-content {
+    font-size: 0.75rem;
+    color: #e0e0e0;
+    line-height: 1.5;
+}
+
+.tooltip-achievement {
+    background-color: #0f2918;
+    border-left: 3px solid var(--primary-color);
+    padding: 0.6rem;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.75rem;
+    color: #4ade80;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+/* Tooltip Position Adjustments for Edge Cards */
+.investor-card:first-child .investor-tooltip,
+.investor-card:nth-child(5n+1) .investor-tooltip {
+    left: 0;
+    transform: translateX(0);
+}
+
+.investor-card:first-child .investor-tooltip::after,
+.investor-card:nth-child(5n+1) .investor-tooltip::after {
+    left: 30px;
+    transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+    .investor-tooltip {
+        width: 240px;
+        padding: 0.8rem;
+        bottom: calc(100% + 10px);
+        font-size: 0.85rem;
+    }
+
+    .tooltip-header img {
+        width: 32px;
+        height: 32px;
+    }
+
+    .tooltip-content {
+        font-size: 0.7rem;
+    }
+
+    .tooltip-achievement {
+        font-size: 0.65rem;
+    }
 }
 
 /* ========== Results Section ========== */
