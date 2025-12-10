@@ -1371,6 +1371,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="card-symbol">
                             <span class="card-market">${marketFlag}</span>
                             <span>${rec.symbol}</span>
+                            ${rec.isRealData ? '<span class="data-badge-real" title="실제 재무 데이터">📊 실제</span>' : '<span class="data-badge-sim" title="시뮬레이션 데이터">📈 시뮬</span>'}
                         </div>
                     </div>
                     <div class="card-score-section">
