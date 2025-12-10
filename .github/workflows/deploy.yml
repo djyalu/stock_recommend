@@ -40,8 +40,11 @@ jobs:
             package.json
             package-lock.json
             optimize-images.js
+            assets_original_backup/
       
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
