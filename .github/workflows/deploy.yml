@@ -32,6 +32,14 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
+          exclude-paths: |
+            node_modules/
+            .git/
+            .github/
+            README.md
+            package.json
+            package-lock.json
+            optimize-images.js
       
       - name: Deploy to GitHub Pages
         id: deployment
