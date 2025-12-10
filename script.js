@@ -1006,21 +1006,51 @@ document.addEventListener('DOMContentLoaded', () => {
     // Using multiple CORS proxies for reliability
     const PROXIES = [
         'https://corsproxy.io/?',
-        'https://api.allorigins.win/raw?url=',
-        'https://thingproxy.freeboard.io/fetch/'
+        'https://api.allorigins.win/get?url=',
+        'https://thingproxy.freeboard.io/fetch/',
+        'https://cors-anywhere.herokuapp.com/',
+        'https://api.codetabs.com/v1/proxy?quest='
     ];
     const BASE_URL = 'https://query1.finance.yahoo.com';
 
     async function fetchWithProxy(targetUrl) {
-        for (const proxy of PROXIES) {
+        for (let i = 0; i < PROXIES.length; i++) {
+            const proxy = PROXIES[i];
             try {
-                const url = `${proxy}${encodeURIComponent(targetUrl)}`;
-                const response = await fetch(url);
+                let url = `${proxy}${encodeURIComponent(targetUrl)}`;
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8초 타임아웃
+                
+                const response = await fetch(url, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                // allorigins.win은 {contents: "..."} 형식으로 래핑됨
+                if (proxy.includes('allorigins.win')) {
+                    const data = await response.json();
+                    if (data.contents) {
+                        return JSON.parse(data.contents);
+                    }
+                    return data;
+                }
+                
                 return await response.json();
             } catch (e) {
-                console.warn(`Proxy ${proxy} failed:`, e);
-                // Continue to next proxy
+                // 타임아웃이나 네트워크 에러는 다음 프록시로 빠르게 전환
+                if (e.name === 'AbortError') {
+                    console.warn(`⚠️ Proxy ${proxy} timeout (8s), trying next proxy...`);
+                } else if (e.message && (e.message.includes('401') || e.message.includes('403') || e.message.includes('520') || e.message.includes('CORS'))) {
+                    console.warn(`⚠️ Proxy ${proxy} error (${e.message}), trying next proxy...`);
+                } else {
+                    console.warn(`⚠️ Proxy ${proxy} failed:`, e.message || e.name || e);
+                }
+                // 마지막 프록시가 아니면 다음으로 계속
+                if (i < PROXIES.length - 1) {
+                    continue;
+                }
             }
         }
         throw new Error("All proxies failed");
@@ -1078,8 +1108,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     dataSource = 'fmp';
                     console.log('✅ Using REAL financial data from FMP API');
                 } else {
-                    // 2. Yahoo Finance API 시도
-                    const yahooFinancialData = await fetchYahooFinancialData(ticker);
+                    // 2. Yahoo Finance API 시도 (타임아웃 5초)
+                    let yahooFinancialData = null;
+                    try {
+                        yahooFinancialData = await Promise.race([
+                            fetchYahooFinancialData(ticker),
+                            new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Yahoo Finance timeout')), 5000)
+                            )
+                        ]);
+                    } catch (err) {
+                        console.warn(`⚠️ Yahoo Finance API 실패 (${ticker}):`, err.message);
+                        yahooFinancialData = null;
+                    }
+                    
                     if (yahooFinancialData) {
                         financialData = {
                             per: yahooFinancialData.per || null,
@@ -1171,8 +1213,111 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ========== Stock Recommendation System ==========
-    // 주식 목록 정의 (미국 + 한국)
+    // ========== News-Based Stock Recommendation System ==========
+    
+    // 주식 관련 뉴스 가져오기
+    async function fetchStockNews() {
+        try {
+            // 최신 주식 뉴스 가져오기 (여러 검색어로)
+            const searchTerms = ['stock market', '주식', 'investment', '투자', 'earnings', '실적'];
+            const allNews = [];
+            
+            for (const term of searchTerms.slice(0, 3)) { // 처음 3개만 사용
+                try {
+                    const targetUrl = `${BASE_URL}/v1/finance/search?q=${encodeURIComponent(term)}&quotesCount=0&newsCount=10`;
+                    const data = await fetchWithProxy(targetUrl);
+                    
+                    if (data.news && data.news.length > 0) {
+                        data.news.forEach(item => {
+                            // 중복 제거
+                            if (!allNews.find(n => n.headline === item.title)) {
+                                allNews.push({
+                                    headline: item.title,
+                                    summary: item.type || '',
+                                    source: item.publisher || item.provider_name || 'Yahoo Finance',
+                                    url: item.link,
+                                    publishTime: item.provider_publish_time || Date.now() / 1000
+                                });
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.warn(`Failed to fetch news for ${term}:`, err);
+                }
+                
+                // API 제한 방지
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            // 최신순 정렬
+            allNews.sort((a, b) => b.publishTime - a.publishTime);
+            
+            return allNews.slice(0, 20); // 상위 20개만
+        } catch (error) {
+            console.error('News fetch error:', error);
+            return [];
+        }
+    }
+
+    // 뉴스 기사에서 종목 추출
+    async function extractStocksFromNews(newsArticles) {
+        const extractedStocks = new Set();
+        
+        newsArticles.forEach(article => {
+            const title = article.headline || '';
+            const summary = article.summary || '';
+            const text = (title + ' ' + summary).toLowerCase();
+            
+            // 키워드 매핑을 통해 종목 찾기
+            Object.entries(stockKeywords).forEach(([symbol, keywords]) => {
+                keywords.forEach(keyword => {
+                    if (text.includes(keyword.toLowerCase())) {
+                        extractedStocks.add(symbol);
+                    }
+                });
+            });
+        });
+        
+        return Array.from(extractedStocks);
+    }
+
+    // 뉴스에서 종목명 추출을 위한 키워드 매핑
+    const stockKeywords = {
+        // 미국 주식
+        'AAPL': ['Apple', '아이폰', 'iPhone', '애플'],
+        'MSFT': ['Microsoft', '마이크로소프트', '윈도우', 'Windows', 'Azure'],
+        'GOOGL': ['Google', '구글', 'Alphabet', '알파벳'],
+        'AMZN': ['Amazon', '아마존', 'AWS'],
+        'TSLA': ['Tesla', '테슬라', '전기차'],
+        'META': ['Meta', 'Facebook', '페이스북', '인스타그램'],
+        'NVDA': ['NVIDIA', '엔비디아', 'GPU', 'AI'],
+        'JPM': ['JPMorgan', 'JP모건', '모건'],
+        'V': ['Visa', '비자'],
+        'JNJ': ['Johnson', '존슨앤존슨'],
+        'WMT': ['Walmart', '월마트'],
+        'PG': ['Procter', 'P&G', '프록터앤갬블'],
+        'MA': ['Mastercard', '마스터카드'],
+        'DIS': ['Disney', '디즈니'],
+        'NFLX': ['Netflix', '넷플릭스'],
+        // 한국 주식
+        '005930.KS': ['삼성전자', 'Samsung', '갤럭시', 'Galaxy'],
+        '000660.KS': ['SK하이닉스', 'SK Hynix', '하이닉스'],
+        '035420.KS': ['NAVER', '네이버'],
+        '035720.KS': ['카카오', 'Kakao'],
+        '051910.KS': ['LG화학', 'LG Chem'],
+        '006400.KS': ['삼성SDI', 'Samsung SDI'],
+        '028260.KS': ['삼성물산', 'Samsung C&T'],
+        '207940.KS': ['삼성바이오로직스', 'Samsung Bio'],
+        '005380.KS': ['현대차', 'Hyundai', '현대'],
+        '096770.KS': ['SK이노베이션', 'SK Innovation'],
+        '003670.KS': ['포스코', 'POSCO'],
+        '017670.KS': ['SK텔레콤', 'SK Telecom'],
+        '105560.KS': ['KB금융', 'KB Financial'],
+        '055550.KS': ['신한지주', 'Shinhan'],
+        '032830.KS': ['삼성생명', 'Samsung Life']
+    };
+
+    // 주식 목록 정의 (미국 + 한국) - 백업용
     const stockList = [
         // 미국 주식
         { symbol: 'AAPL', name: 'Apple Inc.', market: 'US' },
@@ -1208,104 +1353,253 @@ document.addEventListener('DOMContentLoaded', () => {
         { symbol: '032830.KS', name: '삼성생명', market: 'KR' }
     ];
 
-    // 추천 점수 계산 함수
+    // 추천 점수 계산 함수 (개선된 버전)
     function calculateRecommendationScore(stockData) {
-        let score = 0;
+        let score = 50; // 기본 점수 50점에서 시작 (더 관대한 평가)
         const reasons = [];
+        const explanations = []; // 해설 배열
 
         // PER 점수 (낮을수록 좋음, 10-20이 이상적)
         if (stockData.per && stockData.per > 0) {
             if (stockData.per < 15) {
-                score += 30;
+                score += 25;
                 reasons.push({ type: 'positive', text: `PER ${stockData.per.toFixed(1)} - 저평가` });
+                explanations.push({
+                    type: 'positive',
+                    title: 'PER (주가수익비율) 분석',
+                    content: `현재 PER이 ${stockData.per.toFixed(1)}로 15 미만의 저평가 상태입니다. 이는 시장이 이 종목의 수익 대비 주가를 낮게 평가하고 있음을 의미하며, 투자 가치가 있는 것으로 판단됩니다. 일반적으로 PER 15 미만은 저평가 구간으로 분류됩니다.`
+                });
             } else if (stockData.per < 25) {
-                score += 15;
+                score += 10;
                 reasons.push({ type: 'neutral', text: `PER ${stockData.per.toFixed(1)} - 적정가` });
+                explanations.push({
+                    type: 'neutral',
+                    title: 'PER (주가수익비율) 분석',
+                    content: `PER이 ${stockData.per.toFixed(1)}로 적정 수준입니다. 시장 평균(15-25) 범위 내에 있어 공정한 평가를 받고 있다고 볼 수 있습니다. 과도한 저평가나 고평가 상태는 아닙니다.`
+                });
+            } else if (stockData.per < 40) {
+                score -= 5;
+                reasons.push({ type: 'negative', text: `PER ${stockData.per.toFixed(1)} - 다소 고평가` });
+                explanations.push({
+                    type: 'negative',
+                    title: 'PER (주가수익비율) 분석',
+                    content: `PER이 ${stockData.per.toFixed(1)}로 다소 높은 편입니다. 이는 시장이 이 종목에 대해 높은 기대를 하고 있거나, 성장 가능성을 반영한 것으로 해석될 수 있습니다. 투자 시 주의가 필요합니다.`
+                });
             } else {
-                score -= 10;
+                score -= 15;
                 reasons.push({ type: 'negative', text: `PER ${stockData.per.toFixed(1)} - 고평가` });
+                explanations.push({
+                    type: 'negative',
+                    title: 'PER (주가수익비율) 분석',
+                    content: `PER이 ${stockData.per.toFixed(1)}로 매우 높은 수준입니다. 이는 주가가 수익 대비 과도하게 높게 형성되어 있음을 의미합니다. 투자 시 리스크가 높을 수 있으니 신중한 판단이 필요합니다.`
+                });
             }
         }
 
         // ROE 점수 (높을수록 좋음, 15% 이상이 우수)
         if (stockData.roe && stockData.roe > 0) {
             if (stockData.roe > 20) {
-                score += 25;
+                score += 20;
                 reasons.push({ type: 'positive', text: `ROE ${stockData.roe.toFixed(1)}% - 우수한 수익성` });
+                explanations.push({
+                    type: 'positive',
+                    title: 'ROE (자기자본이익률) 분석',
+                    content: `ROE가 ${stockData.roe.toFixed(1)}%로 매우 우수한 수준입니다. 이는 회사가 투자한 자기자본을 효율적으로 활용하여 높은 수익을 창출하고 있음을 의미합니다. 일반적으로 ROE 20% 이상은 우수한 수익성으로 평가됩니다.`
+                });
             } else if (stockData.roe > 15) {
-                score += 15;
-                reasons.push({ type: 'neutral', text: `ROE ${stockData.roe.toFixed(1)}% - 양호한 수익성` });
+                score += 12;
+                reasons.push({ type: 'positive', text: `ROE ${stockData.roe.toFixed(1)}% - 양호한 수익성` });
+                explanations.push({
+                    type: 'positive',
+                    title: 'ROE (자기자본이익률) 분석',
+                    content: `ROE가 ${stockData.roe.toFixed(1)}%로 양호한 수준입니다. 자기자본 대비 수익 창출 능력이 좋은 편이며, 경영 효율성이 우수하다고 평가할 수 있습니다.`
+                });
+            } else if (stockData.roe > 10) {
+                score += 5;
+                reasons.push({ type: 'neutral', text: `ROE ${stockData.roe.toFixed(1)}% - 보통 수익성` });
+                explanations.push({
+                    type: 'neutral',
+                    title: 'ROE (자기자본이익률) 분석',
+                    content: `ROE가 ${stockData.roe.toFixed(1)}%로 보통 수준입니다. 자기자본 활용 효율이 평균적인 수준이며, 추가적인 성장 여지가 있을 수 있습니다.`
+                });
             } else {
-                score -= 5;
+                score -= 8;
                 reasons.push({ type: 'negative', text: `ROE ${stockData.roe.toFixed(1)}% - 낮은 수익성` });
+                explanations.push({
+                    type: 'negative',
+                    title: 'ROE (자기자본이익률) 분석',
+                    content: `ROE가 ${stockData.roe.toFixed(1)}%로 다소 낮은 편입니다. 자기자본 대비 수익 창출 능력이 제한적일 수 있으며, 경영 효율성 개선이 필요한 상황입니다.`
+                });
             }
         }
 
         // PBR 점수 (낮을수록 좋음, 1-2가 이상적)
         if (stockData.pbr && stockData.pbr > 0) {
             if (stockData.pbr < 1.5) {
-                score += 20;
+                score += 18;
                 reasons.push({ type: 'positive', text: `PBR ${stockData.pbr.toFixed(2)} - 저평가` });
+                explanations.push({
+                    type: 'positive',
+                    title: 'PBR (주가순자산비율) 분석',
+                    content: `PBR이 ${stockData.pbr.toFixed(2)}로 저평가 상태입니다. 이는 주가가 순자산 대비 낮게 형성되어 있어, 자산 가치 대비 투자 가치가 있는 것으로 판단됩니다. 일반적으로 PBR 1.5 미만은 저평가 구간으로 분류됩니다.`
+                });
             } else if (stockData.pbr < 3) {
-                score += 10;
+                score += 8;
                 reasons.push({ type: 'neutral', text: `PBR ${stockData.pbr.toFixed(2)} - 적정가` });
+                explanations.push({
+                    type: 'neutral',
+                    title: 'PBR (주가순자산비율) 분석',
+                    content: `PBR이 ${stockData.pbr.toFixed(2)}로 적정 수준입니다. 주가가 순자산 대비 합리적인 수준으로 평가되고 있으며, 시장 평균 범위 내에 있습니다.`
+                });
             } else {
-                score -= 5;
+                score -= 8;
                 reasons.push({ type: 'negative', text: `PBR ${stockData.pbr.toFixed(2)} - 고평가` });
+                explanations.push({
+                    type: 'negative',
+                    title: 'PBR (주가순자산비율) 분석',
+                    content: `PBR이 ${stockData.pbr.toFixed(2)}로 다소 높은 편입니다. 주가가 순자산 대비 높게 형성되어 있어, 자산 가치 대비 주가가 비싼 상태입니다.`
+                });
             }
         }
 
         // 매출 성장률 (높을수록 좋음)
-        if (stockData.revenueGrowth) {
+        if (stockData.revenueGrowth !== null && stockData.revenueGrowth !== undefined) {
             if (stockData.revenueGrowth > 15) {
                 score += 15;
                 reasons.push({ type: 'positive', text: `매출 성장률 ${stockData.revenueGrowth.toFixed(1)}% - 높은 성장` });
+                explanations.push({
+                    type: 'positive',
+                    title: '매출 성장률 분석',
+                    content: `매출 성장률이 ${stockData.revenueGrowth.toFixed(1)}%로 매우 높은 수준입니다. 이는 회사의 사업이 활발하게 성장하고 있음을 의미하며, 향후 수익성 개선 가능성이 높습니다. 성장주로서의 가치가 있다고 평가됩니다.`
+                });
             } else if (stockData.revenueGrowth > 5) {
-                score += 5;
-                reasons.push({ type: 'neutral', text: `매출 성장률 ${stockData.revenueGrowth.toFixed(1)}% - 안정적 성장` });
+                score += 8;
+                reasons.push({ type: 'positive', text: `매출 성장률 ${stockData.revenueGrowth.toFixed(1)}% - 안정적 성장` });
+                explanations.push({
+                    type: 'positive',
+                    title: '매출 성장률 분석',
+                    content: `매출 성장률이 ${stockData.revenueGrowth.toFixed(1)}%로 안정적인 성장세를 보이고 있습니다. 지속적인 성장 동력을 가지고 있으며, 안정적인 투자 대상으로 평가할 수 있습니다.`
+                });
+            } else if (stockData.revenueGrowth > 0) {
+                score += 3;
+                reasons.push({ type: 'neutral', text: `매출 성장률 ${stockData.revenueGrowth.toFixed(1)}% - 소폭 성장` });
+                explanations.push({
+                    type: 'neutral',
+                    title: '매출 성장률 분석',
+                    content: `매출 성장률이 ${stockData.revenueGrowth.toFixed(1)}%로 소폭 성장하고 있습니다. 성장 속도는 완만하지만, 매출이 증가하고 있어 긍정적인 신호로 볼 수 있습니다.`
+                });
             } else {
-                score -= 10;
-                reasons.push({ type: 'negative', text: `매출 성장률 ${stockData.revenueGrowth.toFixed(1)}% - 낮은 성장` });
+                score -= 12;
+                reasons.push({ type: 'negative', text: `매출 성장률 ${stockData.revenueGrowth.toFixed(1)}% - 매출 감소` });
+                explanations.push({
+                    type: 'negative',
+                    title: '매출 성장률 분석',
+                    content: `매출 성장률이 ${stockData.revenueGrowth.toFixed(1)}%로 마이너스입니다. 이는 매출이 감소하고 있음을 의미하며, 사업 전망에 대한 우려가 있을 수 있습니다. 추가적인 분석이 필요합니다.`
+                });
             }
         }
 
         // 부채비율 (낮을수록 좋음)
-        if (stockData.debtToEquity) {
+        if (stockData.debtToEquity !== null && stockData.debtToEquity !== undefined) {
             if (stockData.debtToEquity < 50) {
                 score += 10;
                 reasons.push({ type: 'positive', text: `부채비율 ${stockData.debtToEquity.toFixed(1)}% - 안정적 재무` });
+                explanations.push({
+                    type: 'positive',
+                    title: '부채비율 분석',
+                    content: `부채비율이 ${stockData.debtToEquity.toFixed(1)}%로 매우 안정적인 수준입니다. 이는 회사의 재무 구조가 건전하며, 부채 부담이 낮아 재무 안정성이 우수함을 의미합니다.`
+                });
             } else if (stockData.debtToEquity < 100) {
-                score += 5;
+                score += 3;
                 reasons.push({ type: 'neutral', text: `부채비율 ${stockData.debtToEquity.toFixed(1)}% - 보통` });
+                explanations.push({
+                    type: 'neutral',
+                    title: '부채비율 분석',
+                    content: `부채비율이 ${stockData.debtToEquity.toFixed(1)}%로 보통 수준입니다. 재무 구조가 안정적인 범위 내에 있으며, 특별한 우려사항은 없습니다.`
+                });
             } else {
-                score -= 10;
+                score -= 12;
                 reasons.push({ type: 'negative', text: `부채비율 ${stockData.debtToEquity.toFixed(1)}% - 높은 부채` });
+                explanations.push({
+                    type: 'negative',
+                    title: '부채비율 분석',
+                    content: `부채비율이 ${stockData.debtToEquity.toFixed(1)}%로 높은 편입니다. 이는 회사의 부채 부담이 크며, 재무 리스크가 있을 수 있음을 의미합니다. 투자 시 신중한 판단이 필요합니다.`
+                });
             }
         }
 
         // 가격 변동률 (최근 상승세는 긍정적)
-        if (stockData.changePercent) {
-            if (stockData.changePercent > 2) {
+        if (stockData.changePercent !== null && stockData.changePercent !== undefined) {
+            if (stockData.changePercent > 3) {
+                score += 8;
+                reasons.push({ type: 'positive', text: `최근 ${stockData.changePercent.toFixed(2)}% 상승 - 강한 상승세` });
+                explanations.push({
+                    type: 'positive',
+                    title: '최근 주가 변동 분석',
+                    content: `최근 주가가 ${stockData.changePercent.toFixed(2)}% 상승했습니다. 이는 시장의 긍정적인 반응과 함께 강한 상승 모멘텀을 보이고 있음을 의미합니다.`
+                });
+            } else if (stockData.changePercent > 1) {
                 score += 5;
-                reasons.push({ type: 'positive', text: `최근 ${stockData.changePercent.toFixed(2)}% 상승` });
-            } else if (stockData.changePercent < -2) {
-                score -= 5;
-                reasons.push({ type: 'negative', text: `최근 ${stockData.changePercent.toFixed(2)}% 하락` });
+                reasons.push({ type: 'positive', text: `최근 ${stockData.changePercent.toFixed(2)}% 상승 - 상승세` });
+                explanations.push({
+                    type: 'positive',
+                    title: '최근 주가 변동 분석',
+                    content: `최근 주가가 ${stockData.changePercent.toFixed(2)}% 상승했습니다. 시장의 긍정적인 반응이 있으며, 상승 추세를 보이고 있습니다.`
+                });
+            } else if (stockData.changePercent < -3) {
+                score -= 8;
+                reasons.push({ type: 'negative', text: `최근 ${stockData.changePercent.toFixed(2)}% 하락 - 큰 하락세` });
+                explanations.push({
+                    type: 'negative',
+                    title: '최근 주가 변동 분석',
+                    content: `최근 주가가 ${stockData.changePercent.toFixed(2)}% 하락했습니다. 시장의 부정적인 반응이 있으며, 하락 압력이 있는 것으로 보입니다.`
+                });
+            } else if (stockData.changePercent < -1) {
+                score -= 3;
+                reasons.push({ type: 'negative', text: `최근 ${stockData.changePercent.toFixed(2)}% 하락 - 하락세` });
+                explanations.push({
+                    type: 'negative',
+                    title: '최근 주가 변동 분석',
+                    content: `최근 주가가 ${stockData.changePercent.toFixed(2)}% 하락했습니다. 단기적인 조정이 있을 수 있으며, 추가적인 모니터링이 필요합니다.`
+                });
             }
         }
 
-        return { score, reasons };
+        // 점수 범위 제한 (0-100)
+        score = Math.max(0, Math.min(100, score));
+
+        // 종합 평가 해설 추가
+        let overallExplanation = '';
+        if (score >= 70) {
+            overallExplanation = '이 종목은 종합적으로 매우 우수한 투자 가치를 가지고 있습니다. 재무 지표가 전반적으로 양호하며, 성장 가능성과 수익성이 모두 우수한 편입니다. 투자 검토 대상으로 적합합니다.';
+        } else if (score >= 55) {
+            overallExplanation = '이 종목은 전반적으로 양호한 투자 가치를 가지고 있습니다. 일부 지표에서 개선 여지가 있지만, 전반적인 재무 건전성과 성장 가능성이 우수합니다. 투자 시 참고할 만한 종목입니다.';
+        } else if (score >= 40) {
+            overallExplanation = '이 종목은 보통 수준의 투자 가치를 가지고 있습니다. 일부 지표가 우수하지만, 일부 지표에서 개선이 필요합니다. 신중한 분석과 추가 검토가 필요합니다.';
+        } else {
+            overallExplanation = '이 종목은 투자 시 신중한 판단이 필요합니다. 재무 지표나 성장성 측면에서 개선이 필요한 부분이 있으며, 투자 결정 전 충분한 분석과 검토가 필요합니다.';
+        }
+
+        explanations.push({
+            type: 'overall',
+            title: '종합 평가',
+            content: overallExplanation
+        });
+
+        return { score, reasons, explanations };
     }
 
-    // 주식 데이터 수집 및 추천
+    // 뉴스 기반 주식 추천 시스템
     async function collectAndRecommendStocks() {
-        console.log('collectAndRecommendStocks 함수 시작');
+        console.log('🚀 뉴스 기반 종목 추천 시작');
         
         if (!analyzeBtn) {
-            console.error('analyzeBtn이 없습니다!');
+            console.error('❌ analyzeBtn이 없습니다!');
             alert('오류: 버튼을 찾을 수 없습니다.');
             return;
         }
+        
+        console.log('✅ analyzeBtn 찾음, 함수 실행 시작');
         
         const originalBtnText = analyzeBtn.querySelector('.btn-text')?.textContent || analyzeBtn.textContent;
         const progressSection = document.getElementById('progressSection');
@@ -1318,9 +1612,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // UI 상태 변경
         analyzeBtn.disabled = true;
         if (analyzeBtn.querySelector('.btn-text')) {
-            analyzeBtn.querySelector('.btn-text').textContent = '수집 중...';
+            analyzeBtn.querySelector('.btn-text').textContent = '뉴스 분석 중...';
         } else {
-            analyzeBtn.textContent = '수집 중...';
+            analyzeBtn.textContent = '뉴스 분석 중...';
         }
         
         if (progressSection) {
@@ -1334,56 +1628,158 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
+            // 1단계: 뉴스 기사 수집
+            if (progressText) {
+                progressText.textContent = '뉴스 기사 수집 중...';
+            }
+            if (progressBar) {
+                progressBar.style.width = '10%';
+            }
+            
+            const newsArticles = await fetchStockNews();
+            console.log(`수집된 뉴스: ${newsArticles.length}개`);
+            
+            // 2단계: 뉴스에서 종목 추출
+            if (progressText) {
+                progressText.textContent = '종목 추출 중...';
+            }
+            if (progressBar) {
+                progressBar.style.width = '20%';
+            }
+            
+            const extractedSymbols = await extractStocksFromNews(newsArticles);
+            console.log(`추출된 종목: ${extractedSymbols.length}개`, extractedSymbols);
+            
+            // 추출된 종목이 없거나 너무 적으면 기본 종목 사용
+            // 추천 수량 가져오기 (함수 시작 부분에서 한 번만 선언)
+            let recommendCountSelect = document.getElementById('recommendCount');
+            let recommendCount = recommendCountSelect ? parseInt(recommendCountSelect.value) : 10;
+            const minStocksToAnalyze = Math.max(recommendCount, 15); // 최소 추천 수량만큼은 분석
+            
+            // 추출된 종목이 없거나 너무 적으면 기본 종목 사용 (미국/한국 균형있게)
+            let symbolsToAnalyze = [];
+            if (extractedSymbols.length >= 3) {
+                symbolsToAnalyze = extractedSymbols;
+            } else {
+                // 미국과 한국 주식을 균형있게 선택
+                const usStocks = stockList.filter(s => s.market === 'US');
+                const krStocks = stockList.filter(s => s.market === 'KR');
+                const halfCount = Math.ceil(minStocksToAnalyze / 2);
+                
+                // 미국 주식과 한국 주식을 각각 절반씩 선택
+                const selectedUS = usStocks.slice(0, Math.min(halfCount, usStocks.length));
+                const selectedKR = krStocks.slice(0, Math.min(halfCount, krStocks.length));
+                
+                // 나머지는 더 많은 쪽에서 채우기
+                const remaining = minStocksToAnalyze - selectedUS.length - selectedKR.length;
+                if (remaining > 0) {
+                    if (selectedUS.length < selectedKR.length) {
+                        selectedUS.push(...usStocks.slice(selectedUS.length, selectedUS.length + remaining));
+                    } else {
+                        selectedKR.push(...krStocks.slice(selectedKR.length, selectedKR.length + remaining));
+                    }
+                }
+                
+                symbolsToAnalyze = [...selectedUS, ...selectedKR].map(s => s.symbol);
+                console.log(`📊 기본 종목 사용: 미국 ${selectedUS.length}개, 한국 ${selectedKR.length}개`);
+            }
+            
+            console.log(`📊 분석할 종목 수: ${symbolsToAnalyze.length}개`);
+            console.log(`📋 분석 종목 목록:`, symbolsToAnalyze);
+            
+            // 미국/한국 종목 분류
+            const usCount = symbolsToAnalyze.filter(s => !s.includes('.KS')).length;
+            const krCount = symbolsToAnalyze.filter(s => s.includes('.KS')).length;
+            console.log(`🇺🇸 미국: ${usCount}개, 🇰🇷 한국: ${krCount}개`);
+            
+            // 3단계: 추출된 종목 분석
             const recommendations = [];
-            const totalStocks = stockList.length;
+            const totalStocks = symbolsToAnalyze.length;
             let completedCount = 0;
 
-            // 병렬 처리로 여러 종목을 동시에 분석 (최대 5개 동시)
-            const batchSize = 5;
+            // 병렬 처리로 여러 종목을 동시에 분석 (최대 8개 동시)
+            const batchSize = 8;
             for (let i = 0; i < totalStocks; i += batchSize) {
-                const batch = stockList.slice(i, i + batchSize);
+                const batch = symbolsToAnalyze.slice(i, i + batchSize);
                 
                 // 배치 병렬 처리
-                const batchPromises = batch.map(async (stock) => {
+                const batchPromises = batch.map(async (symbol) => {
                     try {
-                        const stockData = await fetchStockData(stock.symbol);
+                        // 종목 정보 찾기
+                        const stockInfo = stockList.find(s => s.symbol === symbol) || 
+                                        { symbol: symbol, name: symbol, market: symbol.includes('.KS') ? 'KR' : 'US' };
+                        
+                        // 타임아웃 설정 (10초)
+                        const stockData = await Promise.race([
+                            fetchStockData(symbol),
+                            new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Timeout')), 10000)
+                            )
+                        ]).catch(err => {
+                            console.warn(`⚠️ ${symbol} 데이터 가져오기 실패:`, err.message);
+                            return null;
+                        });
+                        
                         if (stockData) {
-                            const { score, reasons } = calculateRecommendationScore(stockData);
+                            const { score, reasons, explanations } = calculateRecommendationScore(stockData);
                             
                             completedCount++;
                             
                             // 진행 상황 업데이트
-                            const progress = Math.round((completedCount / totalStocks) * 100);
+                            const progress = 20 + Math.round((completedCount / totalStocks) * 70);
                             if (progressBar) {
                                 progressBar.style.width = `${progress}%`;
                             }
                             if (progressText) {
-                                progressText.textContent = `${stock.name} 분석 완료... (${completedCount}/${totalStocks})`;
+                                progressText.textContent = `${stockInfo.name} 분석 중... (${completedCount}/${totalStocks})`;
                             }
                             if (progressPercent) {
                                 progressPercent.textContent = `${progress}%`;
                             }
                             
+                            // 관련 뉴스 찾기
+                            const relatedNews = newsArticles.filter(news => {
+                                const text = (news.headline + ' ' + news.summary).toLowerCase();
+                                const keywords = stockKeywords[symbol] || [];
+                                return keywords.some(kw => text.includes(kw.toLowerCase()));
+                            }).slice(0, 3); // 최대 3개
+                            
                             return {
-                                symbol: stock.symbol,
-                                name: stock.name,
-                                market: stock.market,
+                                symbol: symbol,
+                                name: stockInfo.name,
+                                market: stockInfo.market,
                                 price: stockData.price,
                                 change: stockData.change,
                                 changePercent: stockData.changePercent,
+                                volume: stockData.volume,
                                 score: score,
                                 reasons: reasons,
+                                explanations: explanations || [],
                                 per: stockData.per,
                                 pbr: stockData.pbr,
                                 roe: stockData.roe,
                                 revenueGrowth: stockData.revenueGrowth,
                                 debtToEquity: stockData.debtToEquity,
-                                isRealData: stockData.isRealData || false
+                                isRealData: stockData.isRealData || false,
+                                relatedNews: relatedNews
                             };
+                        } else {
+                            console.warn(`⚠️ ${symbol} (${stockInfo.name}): stockData가 null입니다.`);
                         }
                     } catch (err) {
-                        console.warn(`Failed to fetch data for ${stock.symbol}:`, err);
+                        console.warn(`⚠️ ${symbol} 분석 실패:`, err.message || err);
                         completedCount++;
+                        // 실패해도 진행 상황 업데이트
+                        const progress = 20 + Math.round((completedCount / totalStocks) * 70);
+                        if (progressBar) {
+                            progressBar.style.width = `${progress}%`;
+                        }
+                        if (progressText) {
+                            progressText.textContent = `${symbol} 분석 실패... (${completedCount}/${totalStocks})`;
+                        }
+                        if (progressPercent) {
+                            progressPercent.textContent = `${progress}%`;
+                        }
                     }
                     return null;
                 });
@@ -1393,17 +1789,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 batchResults.forEach(result => {
                     if (result) {
                         recommendations.push(result);
+                        console.log(`✅ 분석 완료: ${result.name} (${result.symbol}) - 점수: ${result.score.toFixed(1)}`);
                     }
                 });
+                
+                console.log(`현재까지 수집된 추천 종목: ${recommendations.length}개`);
 
-                // 배치 간 짧은 딜레이 (API 제한 방지)
+                // 배치 간 딜레이 (API 제한 방지)
                 if (i + batchSize < totalStocks) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
             }
 
             // 점수 기준으로 정렬
             recommendations.sort((a, b) => b.score - a.score);
+            
+            // 정렬 후 디버깅 로그
+            console.log(`📊 정렬 후 추천 종목 (총 ${recommendations.length}개):`);
+            recommendations.forEach((rec, idx) => {
+                console.log(`  ${idx + 1}. ${rec.name} (${rec.symbol}): ${rec.score.toFixed(1)}점`);
+            });
 
             // 진행 완료
             if (progressBar) {
@@ -1416,8 +1821,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 progressPercent.textContent = '100%';
             }
 
-            // 상위 10개 추천 종목 표시
-            renderRecommendations(recommendations.slice(0, 10));
+            // 추천 수량은 이미 위에서 가져왔으므로 재사용
+            // 결과 렌더링 (뉴스 + 추천 종목)
+            const finalRecommendations = recommendations.slice(0, recommendCount);
+            console.log(`📊 최종 분석 결과: ${recommendations.length}개 종목 분석 완료`);
+            console.log(`🎯 최종 추천: ${finalRecommendations.length}개 종목 표시 (요청: ${recommendCount}개)`);
+            
+            // 최종 추천 종목 로그
+            console.log(`🏆 최종 추천 종목 목록:`);
+            finalRecommendations.forEach((rec, idx) => {
+                console.log(`  ${idx + 1}. ${rec.name} (${rec.symbol}): ${rec.score.toFixed(1)}점`);
+            });
+            
+            // 제외된 고점수 종목 확인 (디버깅용)
+            const excludedHighScore = recommendations.slice(recommendCount).filter(r => r.score >= 70);
+            if (excludedHighScore.length > 0) {
+                console.warn(`⚠️ 고점수 종목이 추천 수량 제한으로 제외되었습니다:`);
+                excludedHighScore.forEach(rec => {
+                    console.warn(`  - ${rec.name} (${rec.symbol}): ${rec.score.toFixed(1)}점`);
+                });
+            }
+            renderNewsBasedRecommendations(newsArticles.slice(0, 10), finalRecommendations);
 
             // UI 상태 복원
             if (analyzeBtn.querySelector('.btn-text')) {
@@ -1437,25 +1861,262 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } catch (err) {
-            console.error("Error collecting stocks:", err);
-            alert(currentLang === 'ko' 
-                ? `오류가 발생했습니다: ${err.message || "알 수 없는 오류"}`
-                : `An error occurred: ${err.message || "Unknown error"}`);
+            console.error("❌ Error collecting stocks:", err);
+            console.error("에러 상세:", err.stack);
+            alert(`오류가 발생했습니다: ${err.message || "알 수 없는 오류"}\n\n콘솔(F12)에서 자세한 내용을 확인하세요.`);
             
             // UI 상태 복원
-            if (analyzeBtn.querySelector('.btn-text')) {
-                analyzeBtn.querySelector('.btn-text').textContent = originalBtnText;
-            } else {
-                analyzeBtn.textContent = originalBtnText;
+            if (analyzeBtn) {
+                if (analyzeBtn.querySelector('.btn-text')) {
+                    analyzeBtn.querySelector('.btn-text').textContent = originalBtnText;
+                } else {
+                    analyzeBtn.textContent = originalBtnText;
+                }
+                analyzeBtn.disabled = false;
             }
-            analyzeBtn.disabled = false;
             if (progressSection) {
                 progressSection.classList.add('hidden');
             }
         }
     }
 
-    // 추천 종목 렌더링
+    // 뉴스 기반 추천 종목 렌더링 (뉴스 + 상세 정보)
+    function renderNewsBasedRecommendations(newsArticles, recommendations) {
+        const resultsSection = document.getElementById('resultsSection');
+        if (!resultsSection) return;
+
+        // 상단: 뉴스 섹션
+        let newsHTML = `
+            <div class="news-section">
+                <div class="section-header-modern">
+                    <h2 class="section-title">📰 주요 뉴스 기사</h2>
+                    <p class="section-description">최근 주식 시장 관련 뉴스입니다</p>
+                </div>
+                <div class="news-grid">
+        `;
+
+        newsArticles.forEach((news, index) => {
+            const date = news.publishTime ? new Date(news.publishTime * 1000).toLocaleDateString('ko-KR') : '최근';
+            newsHTML += `
+                <div class="news-card">
+                    <div class="news-header">
+                        <span class="news-source">${news.source}</span>
+                        <span class="news-date">${date}</span>
+                    </div>
+                    <h3 class="news-title">${news.headline}</h3>
+                    ${news.summary ? `<p class="news-summary">${news.summary.substring(0, 150)}...</p>` : ''}
+                    ${news.url ? `<a href="${news.url}" target="_blank" rel="noopener" class="news-link">기사 보기 →</a>` : ''}
+                </div>
+            `;
+        });
+
+        newsHTML += `
+                </div>
+            </div>
+        `;
+
+        // 중간: 추천 종목 요약
+        let summaryHTML = `
+            <div class="recommendations-summary">
+                <div class="section-header-modern">
+                    <h2 class="section-title">🎯 추천 종목 TOP ${recommendations.length}</h2>
+                    <p class="section-description">뉴스 기반 분석으로 선정된 추천 종목입니다 (총 ${recommendations.length}개 분석됨)</p>
+                </div>
+                <div class="summary-grid">
+        `;
+
+        recommendations.forEach((rec, index) => {
+            const marketFlag = rec.market === 'KR' ? '🇰🇷' : '🇺🇸';
+            const changeClass = rec.changePercent >= 0 ? 'positive' : 'negative';
+            const changeSign = rec.changePercent >= 0 ? '+' : '';
+            
+            summaryHTML += `
+                <div class="summary-card ${rec.score >= 60 ? 'high' : rec.score >= 30 ? 'medium' : 'low'}">
+                    <div class="summary-rank">#${index + 1}</div>
+                    <div class="summary-info">
+                        <div class="summary-header">
+                            <span class="summary-flag">${marketFlag}</span>
+                            <span class="summary-name">${rec.name}</span>
+                            <span class="summary-symbol">${rec.symbol}</span>
+                        </div>
+                        <div class="summary-score">추천 점수: <strong>${rec.score.toFixed(1)}</strong></div>
+                        <div class="summary-price">
+                            <span class="price-value">$${typeof rec.price === 'number' ? rec.price.toFixed(2) : rec.price}</span>
+                            <span class="price-change ${changeClass}">${changeSign}${rec.changePercent.toFixed(2)}%</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        summaryHTML += `
+                </div>
+            </div>
+        `;
+
+        // 하단: 상세 정보
+        let detailsHTML = `
+            <div class="details-section">
+                <div class="section-header-modern">
+                    <h2 class="section-title">📊 종목별 상세 분석</h2>
+                    <p class="section-description">재무 지표, 주가 정보 및 추천 근거를 확인하세요</p>
+                </div>
+                <div class="details-grid">
+        `;
+
+        recommendations.forEach((rec, index) => {
+            const marketFlag = rec.market === 'KR' ? '🇰🇷' : '🇺🇸';
+            const priceValue = typeof rec.price === 'number' 
+                ? rec.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : rec.price;
+            
+            const changeClass = rec.changePercent >= 0 ? 'positive' : 'negative';
+            const changeSign = rec.changePercent >= 0 ? '+' : '';
+
+            detailsHTML += `
+                <div class="detail-card ${rec.score >= 60 ? 'high-score' : rec.score >= 30 ? 'medium-score' : 'low-score'}">
+                    <div class="detail-header">
+                        <div class="detail-title-section">
+                            <span class="detail-rank">#${index + 1}</span>
+                            <span class="detail-flag">${marketFlag}</span>
+                            <div class="detail-name-group">
+                                <h3 class="detail-name">${rec.name}</h3>
+                                <span class="detail-symbol">${rec.symbol}</span>
+                            </div>
+                        </div>
+                        <div class="detail-score-badge score-${rec.score >= 60 ? 'high' : rec.score >= 30 ? 'medium' : 'low'}">
+                            ${rec.score.toFixed(1)}점
+                        </div>
+                    </div>
+
+                    <div class="detail-content">
+                        <!-- 주가 정보 -->
+                        <div class="detail-section">
+                            <h4 class="detail-section-title">💰 주가 정보</h4>
+                            <div class="detail-metrics-grid">
+                                <div class="detail-metric">
+                                    <span class="metric-label">현재가</span>
+                                    <span class="metric-value">$${priceValue}</span>
+                                </div>
+                                <div class="detail-metric">
+                                    <span class="metric-label">변동률</span>
+                                    <span class="metric-value ${changeClass}">${changeSign}${rec.changePercent.toFixed(2)}%</span>
+                                </div>
+                                ${rec.volume ? `
+                                <div class="detail-metric">
+                                    <span class="metric-label">거래량</span>
+                                    <span class="metric-value">${rec.volume.toLocaleString()}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- 재무 지표 -->
+                        <div class="detail-section">
+                            <h4 class="detail-section-title">📈 재무 지표</h4>
+                            <div class="detail-metrics-grid">
+                                ${rec.per !== null && rec.per !== undefined ? `
+                                <div class="detail-metric">
+                                    <span class="metric-label">PER</span>
+                                    <span class="metric-value">${rec.per.toFixed(2)}</span>
+                                </div>
+                                ` : ''}
+                                ${rec.pbr !== null && rec.pbr !== undefined ? `
+                                <div class="detail-metric">
+                                    <span class="metric-label">PBR</span>
+                                    <span class="metric-value">${rec.pbr.toFixed(2)}</span>
+                                </div>
+                                ` : ''}
+                                ${rec.roe !== null && rec.roe !== undefined ? `
+                                <div class="detail-metric">
+                                    <span class="metric-label">ROE</span>
+                                    <span class="metric-value">${rec.roe.toFixed(2)}%</span>
+                                </div>
+                                ` : ''}
+                                ${rec.revenueGrowth !== null && rec.revenueGrowth !== undefined ? `
+                                <div class="detail-metric">
+                                    <span class="metric-label">매출 성장률</span>
+                                    <span class="metric-value">${rec.revenueGrowth.toFixed(2)}%</span>
+                                </div>
+                                ` : ''}
+                                ${rec.debtToEquity !== null && rec.debtToEquity !== undefined ? `
+                                <div class="detail-metric">
+                                    <span class="metric-label">부채비율</span>
+                                    <span class="metric-value">${rec.debtToEquity.toFixed(2)}%</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- 추천 근거 -->
+                        <div class="detail-section">
+                            <h4 class="detail-section-title">🎯 추천 근거</h4>
+                            <div class="reasons-list">
+                                ${rec.reasons.map(reason => `
+                                    <div class="reason-item reason-${reason.type}">
+                                        <span class="reason-icon">${reason.type === 'positive' ? '✅' : reason.type === 'negative' ? '⚠️' : 'ℹ️'}</span>
+                                        <span class="reason-text">${reason.text}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- 상세 해설 -->
+                        ${rec.explanations && rec.explanations.length > 0 ? `
+                        <div class="detail-section">
+                            <h4 class="detail-section-title">📖 상세 해설</h4>
+                            <div class="explanations-list">
+                                ${rec.explanations.map(exp => `
+                                    <div class="explanation-item explanation-${exp.type}">
+                                        <div class="explanation-header">
+                                            <span class="explanation-icon">${exp.type === 'positive' ? '✅' : exp.type === 'negative' ? '⚠️' : exp.type === 'overall' ? '📊' : 'ℹ️'}</span>
+                                            <h5 class="explanation-title">${exp.title}</h5>
+                                        </div>
+                                        <p class="explanation-content">${exp.content}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- 관련 뉴스 -->
+                        ${rec.relatedNews && rec.relatedNews.length > 0 ? `
+                        <div class="detail-section">
+                            <h4 class="detail-section-title">📰 관련 뉴스</h4>
+                            <div class="related-news-list">
+                                ${rec.relatedNews.map(news => `
+                                    <div class="related-news-item">
+                                        <a href="${news.url || '#'}" target="_blank" rel="noopener" class="related-news-link">
+                                            <span class="related-news-title">${news.headline}</span>
+                                            <span class="related-news-source">${news.source}</span>
+                                        </a>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- 데이터 소스 -->
+                        <div class="detail-footer">
+                            <span class="data-badge ${rec.isRealData ? 'data-badge-real' : 'data-badge-sim'}">
+                                ${rec.isRealData ? '✅ 실제 데이터' : '🔮 시뮬레이션'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        detailsHTML += `
+                </div>
+            </div>
+        `;
+
+        // 전체 HTML 조합
+        resultsSection.innerHTML = newsHTML + summaryHTML + detailsHTML;
+    }
+
+    // 추천 종목 렌더링 (기존 함수 - 호환성 유지)
     function renderRecommendations(recommendations) {
         const resultsGrid = document.getElementById('resultsGrid');
         if (!resultsGrid) return;
@@ -1568,12 +2229,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // 버튼 클릭 이벤트 변경
     // 버튼 클릭 이벤트 등록
     if (analyzeBtn) {
-        analyzeBtn.addEventListener('click', (e) => {
+        analyzeBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            console.log('버튼 클릭됨! collectAndRecommendStocks 실행');
-            collectAndRecommendStocks();
+            e.stopPropagation();
+            console.log('🔘 버튼 클릭됨! collectAndRecommendStocks 실행');
+            
+            // 즉시 UI 피드백
+            analyzeBtn.style.opacity = '0.7';
+            analyzeBtn.style.cursor = 'wait';
+            
+            try {
+                await collectAndRecommendStocks();
+            } catch (error) {
+                console.error('❌ collectAndRecommendStocks 실행 중 에러:', error);
+                alert(`오류 발생: ${error.message || '알 수 없는 오류'}\n콘솔(F12)을 확인하세요.`);
+            } finally {
+                // UI 복원
+                if (analyzeBtn) {
+                    analyzeBtn.style.opacity = '1';
+                    analyzeBtn.style.cursor = 'pointer';
+                }
+            }
         });
-        console.log('analyzeBtn 이벤트 리스너 등록 완료');
+        console.log('✅ analyzeBtn 이벤트 리스너 등록 완료');
     } else {
         console.error('❌ analyzeBtn을 찾을 수 없습니다! HTML에 버튼이 있는지 확인하세요.');
     }
