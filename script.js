@@ -543,6 +543,78 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Yahoo Finance에서 실제 재무 데이터 가져오기
+    async function fetchYahooFinancialData(ticker) {
+        try {
+            // Yahoo Finance quoteSummary API 사용
+            const modules = ['summaryDetail', 'defaultKeyStatistics', 'financialData', 'incomeStatementHistoryQuarterly'];
+            const targetUrl = `${BASE_URL}/v10/finance/quoteSummary/${ticker}?modules=${modules.join(',')}`;
+            const data = await fetchWithProxy(targetUrl);
+
+            if (data.quoteSummary && data.quoteSummary.result && data.quoteSummary.result.length > 0) {
+                const result = data.quoteSummary.result[0];
+                const summaryDetail = result.summaryDetail || {};
+                const defaultKeyStatistics = result.defaultKeyStatistics || {};
+                const financialData = result.financialData || {};
+                const incomeStatement = result.incomeStatementHistoryQuarterly?.incomeStatementHistory || [];
+
+                // PER 계산 (Price / EPS)
+                const trailingPE = defaultKeyStatistics.trailingPE || summaryDetail.trailingPE || null;
+                const forwardPE = defaultKeyStatistics.forwardPE || summaryDetail.forwardPE || null;
+                const per = trailingPE || forwardPE || null;
+
+                // PBR 계산 (Price / Book Value)
+                const priceToBook = defaultKeyStatistics.priceToBook || null;
+
+                // ROE 계산 (Return on Equity)
+                const returnOnEquity = defaultKeyStatistics.returnOnEquity || financialData.returnOnEquity || null;
+                const roe = returnOnEquity ? returnOnEquity * 100 : null;
+
+                // 부채비율 (Debt to Equity)
+                const debtToEquity = defaultKeyStatistics.debtToEquity || null;
+
+                // 매출 성장률 계산 (Revenue Growth)
+                let revenueGrowth = null;
+                if (incomeStatement.length >= 2) {
+                    const currentRevenue = incomeStatement[0].totalRevenue?.raw || 0;
+                    const previousRevenue = incomeStatement[1].totalRevenue?.raw || 0;
+                    if (previousRevenue > 0) {
+                        revenueGrowth = ((currentRevenue - previousRevenue) / previousRevenue) * 100;
+                    }
+                }
+
+                // 배당 수익률
+                const dividendYield = summaryDetail.dividendYield ? summaryDetail.dividendYield * 100 : null;
+
+                // EPS
+                const trailingEps = defaultKeyStatistics.trailingEps || summaryDetail.trailingEps || null;
+                const forwardEps = defaultKeyStatistics.forwardEps || summaryDetail.forwardEps || null;
+                const eps = trailingEps || forwardEps || null;
+
+                // 시가총액
+                const marketCap = defaultKeyStatistics.marketCap?.raw || summaryDetail.marketCap?.raw || null;
+
+                // 실제 데이터가 하나라도 있으면 반환
+                if (per !== null || priceToBook !== null || roe !== null || revenueGrowth !== null) {
+                    return {
+                        per: per,
+                        pbr: priceToBook,
+                        roe: roe,
+                        debtToEquity: debtToEquity ? debtToEquity * 100 : null,
+                        revenueGrowth: revenueGrowth,
+                        dividendYield: dividendYield,
+                        eps: eps,
+                        marketCap: marketCap
+                    };
+                }
+            }
+            return null;
+        } catch (error) {
+            console.warn('Yahoo Finance financial data fetch failed:', error);
+            return null;
+        }
+    }
+
     async function fetchFmpData(symbol) {
         const apiKey = getFmpApiKey();
         if (!apiKey) return null;
@@ -978,24 +1050,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 const changePercent = (change / previousClose) * 100;
                 const volume = quote.volume[quote.volume.length - 1] || 0;
 
-                // Try to get real financial data from FMP API
-                const fmpData = await fetchFmpData(ticker);
-                isRealData = !!fmpData;
+                // Try to get real financial data from Yahoo Finance API
+                const yahooFinancialData = await fetchYahooFinancialData(ticker);
+                isRealData = !!yahooFinancialData;
 
                 // Use real data if available, otherwise use simulation
                 let financialData;
-                if (fmpData) {
+                if (yahooFinancialData) {
                     financialData = {
-                        per: fmpData.per || 15,
-                        pbr: fmpData.pbr || 2,
-                        roe: fmpData.roe || 10,
-                        debtToEquity: fmpData.debtToEquity || 50,
-                        revenueGrowth: fmpData.revenueGrowth || 10,
-                        dividendYield: fmpData.dividendYield || 0,
-                        eps: fmpData.eps || 0,
-                        marketCap: fmpData.marketCap || 0
+                        per: yahooFinancialData.per || null,
+                        pbr: yahooFinancialData.pbr || null,
+                        roe: yahooFinancialData.roe || null,
+                        debtToEquity: yahooFinancialData.debtToEquity || null,
+                        revenueGrowth: yahooFinancialData.revenueGrowth || null,
+                        dividendYield: yahooFinancialData.dividendYield || 0,
+                        eps: yahooFinancialData.eps || null,
+                        marketCap: yahooFinancialData.marketCap || null
                     };
-                    console.log('Using REAL financial data from FMP API');
+                    console.log('✅ Using REAL financial data from Yahoo Finance API');
                 } else {
                     // Simulation data (fallback) - Use seeded random for consistency
                     // Create a simple seeded random generator based on ticker
