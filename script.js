@@ -385,6 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
+    // DOM 요소 가져오기 (존재하지 않을 수 있는 요소는 optional)
     const investorGrid = document.getElementById('investorGrid');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const stockInput = document.getElementById('stockInput');
@@ -398,6 +399,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyList = document.getElementById('historyList');
     const filterButtons = document.querySelectorAll('.filter-btn');
     const selectedInvestors = new Set();
+
+    // analyzeBtn이 없으면 에러 로그
+    if (!analyzeBtn) {
+        console.error('analyzeBtn을 찾을 수 없습니다!');
+    } else {
+        console.log('analyzeBtn 찾음:', analyzeBtn);
+    }
 
     let currentLang = 'ko';
     let currentFocus = -1;
@@ -596,9 +604,11 @@ document.addEventListener('DOMContentLoaded', () => {
             updateSettingsTranslations();
         });
 
-        closeModalBtn.addEventListener('click', () => {
-            settingsModal.classList.add('hidden');
-        });
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', () => {
+                settingsModal.classList.add('hidden');
+            });
+        }
 
         settingsModal.addEventListener('click', (e) => {
             if (e.target === settingsModal) {
@@ -606,18 +616,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        saveApiKeyBtn.addEventListener('click', () => {
-            const key = apiKeyInput.value.trim();
-            setFmpApiKey(key);
-            settingsModal.classList.add('hidden');
+        if (saveApiKeyBtn) {
+            saveApiKeyBtn.addEventListener('click', () => {
+                const key = apiKeyInput?.value.trim() || '';
+                setFmpApiKey(key);
+                if (settingsModal) {
+                    settingsModal.classList.add('hidden');
+                }
 
-            const message = key ? translations.apiKeySaved[currentLang] : translations.apiKeyCleared[currentLang];
-            alert(message);
-        });
+                const message = key ? translations.apiKeySaved[currentLang] : translations.apiKeyCleared[currentLang];
+                alert(message);
+            });
+        }
 
-        toggleApiKeyBtn.addEventListener('click', () => {
-            apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
-        });
+        if (toggleApiKeyBtn) {
+            toggleApiKeyBtn.addEventListener('click', () => {
+                if (apiKeyInput) {
+                    apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
+                }
+            });
+        }
     }
 
     function updateSettingsTranslations() {
@@ -799,14 +817,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Autocomplete Functionality ---
 
     function closeAllLists() {
-        autocompleteList.innerHTML = '';
+        if (autocompleteList) {
+            autocompleteList.innerHTML = '';
+        }
         currentFocus = -1;
     }
 
     async function showAutocomplete(query) {
         closeAllLists();
 
-        if (!query || query.length < 1) {
+        if (!query || query.length < 1 || !autocompleteList) {
             return;
         }
 
@@ -825,11 +845,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
 
                     div.addEventListener('click', () => {
-                        stockInput.value = item.symbol;
+                        if (stockInput) {
+                            stockInput.value = item.symbol;
+                        }
                         closeAllLists();
                     });
 
-                    autocompleteList.appendChild(div);
+                    if (autocompleteList) {
+                        autocompleteList.appendChild(div);
+                    }
                 });
             }
         } catch (error) {
@@ -837,37 +861,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Input event with debouncing
-    stockInput.addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            showAutocomplete(e.target.value);
-        }, 300);
-    });
+    // Input event with debouncing (stockInput이 있을 때만)
+    if (stockInput) {
+        stockInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                showAutocomplete(e.target.value);
+            }, 300);
+        });
+    }
 
-    // Keyboard navigation
-    stockInput.addEventListener('keydown', (e) => {
-        const items = autocompleteList.getElementsByClassName('autocomplete-item');
+    // Keyboard navigation (stockInput이 있을 때만)
+    if (stockInput) {
+        stockInput.addEventListener('keydown', (e) => {
+            const items = autocompleteList?.getElementsByClassName('autocomplete-item') || [];
 
-        if (e.keyCode === 40) { // Down arrow
-            currentFocus++;
-            addActive(items);
-            e.preventDefault();
-        } else if (e.keyCode === 38) { // Up arrow
-            currentFocus--;
-            addActive(items);
-            e.preventDefault();
-        } else if (e.keyCode === 13) { // Enter
-            e.preventDefault();
-            if (currentFocus > -1 && items[currentFocus]) {
-                items[currentFocus].click();
-            } else {
-                analyzeBtn.click();
+            if (e.keyCode === 40) { // Down arrow
+                currentFocus++;
+                addActive(items);
+                e.preventDefault();
+            } else if (e.keyCode === 38) { // Up arrow
+                currentFocus--;
+                addActive(items);
+                e.preventDefault();
+            } else if (e.keyCode === 13) { // Enter
+                e.preventDefault();
+                if (currentFocus > -1 && items[currentFocus]) {
+                    items[currentFocus].click();
+                } else if (analyzeBtn) {
+                    analyzeBtn.click();
+                }
+            } else if (e.keyCode === 27) { // Escape
+                closeAllLists();
             }
-        } else if (e.keyCode === 27) { // Escape
-            closeAllLists();
-        }
-    });
+        });
+    }
 
     function addActive(items) {
         if (!items || items.length === 0) return;
@@ -1040,100 +1068,391 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    analyzeBtn.addEventListener('click', async () => {
-        const stockInputVal = stockInput.value.trim();
+    // ========== Stock Recommendation System ==========
+    // 주식 목록 정의 (미국 + 한국)
+    const stockList = [
+        // 미국 주식
+        { symbol: 'AAPL', name: 'Apple Inc.', market: 'US' },
+        { symbol: 'MSFT', name: 'Microsoft Corporation', market: 'US' },
+        { symbol: 'GOOGL', name: 'Alphabet Inc.', market: 'US' },
+        { symbol: 'AMZN', name: 'Amazon.com Inc.', market: 'US' },
+        { symbol: 'TSLA', name: 'Tesla Inc.', market: 'US' },
+        { symbol: 'META', name: 'Meta Platforms Inc.', market: 'US' },
+        { symbol: 'NVDA', name: 'NVIDIA Corporation', market: 'US' },
+        { symbol: 'JPM', name: 'JPMorgan Chase & Co.', market: 'US' },
+        { symbol: 'V', name: 'Visa Inc.', market: 'US' },
+        { symbol: 'JNJ', name: 'Johnson & Johnson', market: 'US' },
+        { symbol: 'WMT', name: 'Walmart Inc.', market: 'US' },
+        { symbol: 'PG', name: 'Procter & Gamble Co.', market: 'US' },
+        { symbol: 'MA', name: 'Mastercard Inc.', market: 'US' },
+        { symbol: 'DIS', name: 'The Walt Disney Company', market: 'US' },
+        { symbol: 'NFLX', name: 'Netflix Inc.', market: 'US' },
+        // 한국 주식 (Yahoo Finance 티커 형식)
+        { symbol: '005930.KS', name: '삼성전자', market: 'KR' },
+        { symbol: '000660.KS', name: 'SK하이닉스', market: 'KR' },
+        { symbol: '035420.KS', name: 'NAVER', market: 'KR' },
+        { symbol: '035720.KS', name: '카카오', market: 'KR' },
+        { symbol: '051910.KS', name: 'LG화학', market: 'KR' },
+        { symbol: '006400.KS', name: '삼성SDI', market: 'KR' },
+        { symbol: '028260.KS', name: '삼성물산', market: 'KR' },
+        { symbol: '207940.KS', name: '삼성바이오로직스', market: 'KR' },
+        { symbol: '005380.KS', name: '현대차', market: 'KR' },
+        { symbol: '096770.KS', name: 'SK이노베이션', market: 'KR' },
+        { symbol: '003670.KS', name: '포스코홀딩스', market: 'KR' },
+        { symbol: '017670.KS', name: 'SK텔레콤', market: 'KR' },
+        { symbol: '105560.KS', name: 'KB금융', market: 'KR' },
+        { symbol: '055550.KS', name: '신한지주', market: 'KR' },
+        { symbol: '032830.KS', name: '삼성생명', market: 'KR' }
+    ];
 
-        if (!stockInputVal) {
-            alert(translations.alertStock[currentLang]);
-            return;
+    // 추천 점수 계산 함수
+    function calculateRecommendationScore(stockData) {
+        let score = 0;
+        const reasons = [];
+
+        // PER 점수 (낮을수록 좋음, 10-20이 이상적)
+        if (stockData.per && stockData.per > 0) {
+            if (stockData.per < 15) {
+                score += 30;
+                reasons.push({ type: 'positive', text: `PER ${stockData.per.toFixed(1)} - 저평가` });
+            } else if (stockData.per < 25) {
+                score += 15;
+                reasons.push({ type: 'neutral', text: `PER ${stockData.per.toFixed(1)} - 적정가` });
+            } else {
+                score -= 10;
+                reasons.push({ type: 'negative', text: `PER ${stockData.per.toFixed(1)} - 고평가` });
+            }
         }
 
-        if (selectedInvestors.size === 0) {
-            alert(translations.alertInvestor[currentLang]);
-            return;
+        // ROE 점수 (높을수록 좋음, 15% 이상이 우수)
+        if (stockData.roe && stockData.roe > 0) {
+            if (stockData.roe > 20) {
+                score += 25;
+                reasons.push({ type: 'positive', text: `ROE ${stockData.roe.toFixed(1)}% - 우수한 수익성` });
+            } else if (stockData.roe > 15) {
+                score += 15;
+                reasons.push({ type: 'neutral', text: `ROE ${stockData.roe.toFixed(1)}% - 양호한 수익성` });
+            } else {
+                score -= 5;
+                reasons.push({ type: 'negative', text: `ROE ${stockData.roe.toFixed(1)}% - 낮은 수익성` });
+            }
         }
 
-        // Show loading state
-        const originalBtnText = analyzeBtn.textContent;
-        analyzeBtn.textContent = "Searching...";
+        // PBR 점수 (낮을수록 좋음, 1-2가 이상적)
+        if (stockData.pbr && stockData.pbr > 0) {
+            if (stockData.pbr < 1.5) {
+                score += 20;
+                reasons.push({ type: 'positive', text: `PBR ${stockData.pbr.toFixed(2)} - 저평가` });
+            } else if (stockData.pbr < 3) {
+                score += 10;
+                reasons.push({ type: 'neutral', text: `PBR ${stockData.pbr.toFixed(2)} - 적정가` });
+            } else {
+                score -= 5;
+                reasons.push({ type: 'negative', text: `PBR ${stockData.pbr.toFixed(2)} - 고평가` });
+            }
+        }
+
+        // 매출 성장률 (높을수록 좋음)
+        if (stockData.revenueGrowth) {
+            if (stockData.revenueGrowth > 15) {
+                score += 15;
+                reasons.push({ type: 'positive', text: `매출 성장률 ${stockData.revenueGrowth.toFixed(1)}% - 높은 성장` });
+            } else if (stockData.revenueGrowth > 5) {
+                score += 5;
+                reasons.push({ type: 'neutral', text: `매출 성장률 ${stockData.revenueGrowth.toFixed(1)}% - 안정적 성장` });
+            } else {
+                score -= 10;
+                reasons.push({ type: 'negative', text: `매출 성장률 ${stockData.revenueGrowth.toFixed(1)}% - 낮은 성장` });
+            }
+        }
+
+        // 부채비율 (낮을수록 좋음)
+        if (stockData.debtToEquity) {
+            if (stockData.debtToEquity < 50) {
+                score += 10;
+                reasons.push({ type: 'positive', text: `부채비율 ${stockData.debtToEquity.toFixed(1)}% - 안정적 재무` });
+            } else if (stockData.debtToEquity < 100) {
+                score += 5;
+                reasons.push({ type: 'neutral', text: `부채비율 ${stockData.debtToEquity.toFixed(1)}% - 보통` });
+            } else {
+                score -= 10;
+                reasons.push({ type: 'negative', text: `부채비율 ${stockData.debtToEquity.toFixed(1)}% - 높은 부채` });
+            }
+        }
+
+        // 가격 변동률 (최근 상승세는 긍정적)
+        if (stockData.changePercent) {
+            if (stockData.changePercent > 2) {
+                score += 5;
+                reasons.push({ type: 'positive', text: `최근 ${stockData.changePercent.toFixed(2)}% 상승` });
+            } else if (stockData.changePercent < -2) {
+                score -= 5;
+                reasons.push({ type: 'negative', text: `최근 ${stockData.changePercent.toFixed(2)}% 하락` });
+            }
+        }
+
+        return { score, reasons };
+    }
+
+    // 주식 데이터 수집 및 추천
+    async function collectAndRecommendStocks() {
+        console.log('collectAndRecommendStocks 함수 시작');
+        
+        if (!analyzeBtn) {
+            console.error('analyzeBtn이 없습니다!');
+            alert('오류: 버튼을 찾을 수 없습니다.');
+            return;
+        }
+        
+        const originalBtnText = analyzeBtn.querySelector('.btn-text')?.textContent || analyzeBtn.textContent;
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        const emptyState = document.getElementById('emptyState');
+        const resultsSection = document.getElementById('resultsSection');
+        
+        // UI 상태 변경
         analyzeBtn.disabled = true;
+        if (analyzeBtn.querySelector('.btn-text')) {
+            analyzeBtn.querySelector('.btn-text').textContent = '수집 중...';
+        } else {
+            analyzeBtn.textContent = '수집 중...';
+        }
+        
+        if (progressSection) {
+            progressSection.classList.remove('hidden');
+        }
+        if (emptyState) {
+            emptyState.classList.add('hidden');
+        }
+        if (resultsSection) {
+            resultsSection.classList.add('hidden');
+        }
 
         try {
-            // 1. Search for the symbol
-            const searchResult = await searchSymbol(stockInputVal);
+            const recommendations = [];
 
-            if (!searchResult) {
-                alert(`Could not find stock: ${stockInputVal}`);
-                analyzeBtn.textContent = originalBtnText;
-                analyzeBtn.disabled = false;
-                return;
+            // 주식 목록을 순회하며 데이터 수집
+            for (let i = 0; i < stockList.length; i++) {
+                const stock = stockList[i];
+                
+                // 진행 상황 표시
+                const progress = Math.round(((i + 1) / stockList.length) * 100);
+                if (progressBar) {
+                    progressBar.style.width = `${progress}%`;
+                }
+                if (progressText) {
+                    progressText.textContent = `${stock.name} 분석 중... (${i + 1}/${stockList.length})`;
+                }
+                if (progressPercent) {
+                    progressPercent.textContent = `${progress}%`;
+                }
+
+                try {
+                    const stockData = await fetchStockData(stock.symbol);
+                    if (stockData) {
+                        const { score, reasons } = calculateRecommendationScore(stockData);
+                        
+                        recommendations.push({
+                            symbol: stock.symbol,
+                            name: stock.name,
+                            market: stock.market,
+                            price: stockData.price,
+                            change: stockData.change,
+                            changePercent: stockData.changePercent,
+                            score: score,
+                            reasons: reasons,
+                            per: stockData.per,
+                            pbr: stockData.pbr,
+                            roe: stockData.roe,
+                            revenueGrowth: stockData.revenueGrowth,
+                            debtToEquity: stockData.debtToEquity,
+                            isRealData: stockData.isRealData || false
+                        });
+                    }
+                } catch (err) {
+                    console.warn(`Failed to fetch data for ${stock.symbol}:`, err);
+                }
+
+                // API 호출 제한을 고려한 딜레이
+                await new Promise(resolve => setTimeout(resolve, 200));
             }
 
-            const symbol = searchResult.symbol;
-            const name = searchResult.shortname || searchResult.longname || symbol;
+            // 점수 기준으로 정렬
+            recommendations.sort((a, b) => b.score - a.score);
 
-            // 2. Fetch Real Data
-            const realData = await fetchStockData(symbol);
-
-            if (!realData) {
-                alert(`Failed to load data for ${symbol}. Please try again.`);
-                analyzeBtn.textContent = originalBtnText;
-                analyzeBtn.disabled = false;
-                return;
+            // 진행 완료
+            if (progressBar) {
+                progressBar.style.width = '100%';
+            }
+            if (progressText) {
+                progressText.textContent = '분석 완료!';
+            }
+            if (progressPercent) {
+                progressPercent.textContent = '100%';
             }
 
-            // Map to App Data Structure
-            const stockData = {
-                name: name,
-                ticker: realData.ticker,
-                price: realData.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                change: realData.change.toFixed(2),
-                changePercent: realData.changePercent.toFixed(2),
-                volume: formatVolume(realData.volume),
-                per: realData.per,
-                pbr: realData.pbr,
-                roe: realData.roe,
-                debtToEquity: realData.debtToEquity,
-                revenueGrowth: realData.revenueGrowth,
-                sentiment: realData.sentiment
-            };
+            // 상위 10개 추천 종목 표시
+            renderRecommendations(recommendations.slice(0, 10));
 
-            // 3. Render Stock Summary & Advice (Prioritize these)
-            renderStockSummary(stockData);
-            const verdictResult = generateAdvice(name, stockData);
-
-            // Show Sections immediately
-            resultsSection.style.display = 'block';
-            stockSummary.classList.remove('hidden');
-
-            // Save to history
-            saveToHistory({
-                ticker: stockData.ticker,
-                name: name,
-                sentiment: verdictResult.dominant,
-                sentimentIcon: verdictResult.dominant === 'positive' ? '📈' : verdictResult.dominant === 'negative' ? '📉' : '⏸️'
-            });
-
-            // Scroll to summary
-            stockSummary.scrollIntoView({ behavior: 'smooth' });
-
-            // 4. Fetch News (Non-blocking)
-            try {
-                const newsData = await fetchRealNews(symbol);
-                renderNews(newsData);
-                newsSection.classList.remove('hidden');
-            } catch (newsErr) {
-                console.warn("News fetch failed, but continuing:", newsErr);
+            // UI 상태 복원
+            if (analyzeBtn.querySelector('.btn-text')) {
+                analyzeBtn.querySelector('.btn-text').textContent = originalBtnText;
+            } else {
+                analyzeBtn.textContent = originalBtnText;
+            }
+            analyzeBtn.disabled = false;
+            
+            if (progressSection) {
+                setTimeout(() => {
+                    progressSection.classList.add('hidden');
+                }, 1000);
+            }
+            if (resultsSection) {
+                resultsSection.classList.remove('hidden');
             }
 
         } catch (err) {
-            console.error("Critical Error:", err);
-            alert(`An error occurred: ${err.message || "Unknown error"}`);
-        } finally {
-            analyzeBtn.textContent = originalBtnText;
+            console.error("Error collecting stocks:", err);
+            alert(currentLang === 'ko' 
+                ? `오류가 발생했습니다: ${err.message || "알 수 없는 오류"}`
+                : `An error occurred: ${err.message || "Unknown error"}`);
+            
+            // UI 상태 복원
+            if (analyzeBtn.querySelector('.btn-text')) {
+                analyzeBtn.querySelector('.btn-text').textContent = originalBtnText;
+            } else {
+                analyzeBtn.textContent = originalBtnText;
+            }
             analyzeBtn.disabled = false;
+            if (progressSection) {
+                progressSection.classList.add('hidden');
+            }
         }
-    });
+    }
+
+    // 추천 종목 렌더링
+    function renderRecommendations(recommendations) {
+        const resultsGrid = document.getElementById('resultsGrid');
+        if (!resultsGrid) return;
+
+        resultsGrid.innerHTML = '';
+
+        recommendations.forEach((rec, index) => {
+            const card = document.createElement('div');
+            card.className = 'recommendation-card';
+            
+            // 점수에 따라 카드 스타일 결정
+            if (rec.score >= 60) {
+                card.classList.add('high-score');
+            } else if (rec.score >= 30) {
+                card.classList.add('medium-score');
+            } else {
+                card.classList.add('low-score');
+            }
+
+            const marketFlag = rec.market === 'KR' ? '🇰🇷' : '🇺🇸';
+            const rankNumber = index + 1;
+            const rankIcon = index < 3 ? '🏆' : '';
+
+            const priceValue = typeof rec.price === 'number' 
+                ? rec.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : rec.price;
+            
+            const changeClass = rec.changePercent >= 0 ? 'positive' : 'negative';
+            const changeSign = rec.changePercent >= 0 ? '+' : '';
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="card-title-section">
+                        <div class="card-rank">${rankIcon || `#${rankNumber}`}</div>
+                        <div class="card-name">${rec.name}</div>
+                        <div class="card-symbol">
+                            <span class="card-market">${marketFlag}</span>
+                            <span>${rec.symbol}</span>
+                        </div>
+                    </div>
+                    <div class="card-score-section">
+                        <div class="card-score">${rec.score}</div>
+                        <div class="card-score-label">추천 점수</div>
+                        <div class="card-price-section">
+                            <span class="card-price">$${priceValue}</span>
+                            <span class="card-change ${changeClass}">
+                                ${changeSign}${rec.changePercent.toFixed(2)}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-reasons">
+                    <div class="reasons-title">추천 이유</div>
+                    <div class="reasons-list">
+                        ${rec.reasons.map(reason => {
+                            const icon = reason.type === 'positive' ? '✅' : 
+                                        reason.type === 'negative' ? '⚠️' : 'ℹ️';
+                            return `
+                                <div class="reason-item ${reason.type}">
+                                    <span class="reason-icon">${icon}</span>
+                                    <span class="reason-text">${reason.text}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                
+                <div class="card-metrics">
+                    ${rec.per ? `
+                        <div class="metric-item">
+                            <div class="metric-label">PER</div>
+                            <div class="metric-value">${rec.per.toFixed(1)}</div>
+                        </div>
+                    ` : ''}
+                    ${rec.pbr ? `
+                        <div class="metric-item">
+                            <div class="metric-label">PBR</div>
+                            <div class="metric-value">${rec.pbr.toFixed(2)}</div>
+                        </div>
+                    ` : ''}
+                    ${rec.roe ? `
+                        <div class="metric-item">
+                            <div class="metric-label">ROE</div>
+                            <div class="metric-value">${rec.roe.toFixed(1)}%</div>
+                        </div>
+                    ` : ''}
+                    ${rec.revenueGrowth ? `
+                        <div class="metric-item">
+                            <div class="metric-label">매출 성장</div>
+                            <div class="metric-value">${rec.revenueGrowth.toFixed(1)}%</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            resultsGrid.appendChild(card);
+        });
+
+        // 결과 섹션으로 스크롤
+        const resultsSection = document.getElementById('resultsSection');
+        if (resultsSection) {
+            setTimeout(() => {
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+
+    // 버튼 클릭 이벤트 변경
+    // 버튼 클릭 이벤트 등록
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('버튼 클릭됨! collectAndRecommendStocks 실행');
+            collectAndRecommendStocks();
+        });
+        console.log('analyzeBtn 이벤트 리스너 등록 완료');
+    } else {
+        console.error('❌ analyzeBtn을 찾을 수 없습니다! HTML에 버튼이 있는지 확인하세요.');
+    }
 
     async function fetchRealNews(ticker) {
         try {
