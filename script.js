@@ -620,9 +620,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!apiKey) return null;
 
         try {
+            // FMP API는 한국 주식의 경우 .KS 접미사를 제거해야 할 수 있음
+            // 하지만 일단 원본 티커로 시도하고, 실패하면 .KS 제거 후 재시도
+            let cleanSymbol = symbol;
+            if (symbol.includes('.KS')) {
+                // 한국 주식은 FMP에서 다른 형식일 수 있음
+                // 일단 원본으로 시도
+            }
+            
             // Fetch key metrics (ratios)
-            const ratiosUrl = `${FMP_BASE_URL}/ratios-ttm/${symbol}?apikey=${apiKey}`;
-            const quoteUrl = `${FMP_BASE_URL}/quote/${symbol}?apikey=${apiKey}`;
+            const ratiosUrl = `${FMP_BASE_URL}/ratios-ttm/${cleanSymbol}?apikey=${apiKey}`;
+            const quoteUrl = `${FMP_BASE_URL}/quote/${cleanSymbol}?apikey=${apiKey}`;
 
             const [ratiosRes, quoteRes] = await Promise.all([
                 fetch(ratiosUrl),
