@@ -1335,51 +1335,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const recommendations = [];
+            const totalStocks = stockList.length;
+            let completedCount = 0;
 
-            // 주식 목록을 순회하며 데이터 수집
-            for (let i = 0; i < stockList.length; i++) {
-                const stock = stockList[i];
+            // 병렬 처리로 여러 종목을 동시에 분석 (최대 5개 동시)
+            const batchSize = 5;
+            for (let i = 0; i < totalStocks; i += batchSize) {
+                const batch = stockList.slice(i, i + batchSize);
                 
-                // 진행 상황 표시
-                const progress = Math.round(((i + 1) / stockList.length) * 100);
-                if (progressBar) {
-                    progressBar.style.width = `${progress}%`;
-                }
-                if (progressText) {
-                    progressText.textContent = `${stock.name} 분석 중... (${i + 1}/${stockList.length})`;
-                }
-                if (progressPercent) {
-                    progressPercent.textContent = `${progress}%`;
-                }
-
-                try {
-                    const stockData = await fetchStockData(stock.symbol);
-                    if (stockData) {
-                        const { score, reasons } = calculateRecommendationScore(stockData);
-                        
-                        recommendations.push({
-                            symbol: stock.symbol,
-                            name: stock.name,
-                            market: stock.market,
-                            price: stockData.price,
-                            change: stockData.change,
-                            changePercent: stockData.changePercent,
-                            score: score,
-                            reasons: reasons,
-                            per: stockData.per,
-                            pbr: stockData.pbr,
-                            roe: stockData.roe,
-                            revenueGrowth: stockData.revenueGrowth,
-                            debtToEquity: stockData.debtToEquity,
-                            isRealData: stockData.isRealData || false
-                        });
+                // 배치 병렬 처리
+                const batchPromises = batch.map(async (stock) => {
+                    try {
+                        const stockData = await fetchStockData(stock.symbol);
+                        if (stockData) {
+                            const { score, reasons } = calculateRecommendationScore(stockData);
+                            
+                            completedCount++;
+                            
+                            // 진행 상황 업데이트
+                            const progress = Math.round((completedCount / totalStocks) * 100);
+                            if (progressBar) {
+                                progressBar.style.width = `${progress}%`;
+                            }
+                            if (progressText) {
+                                progressText.textContent = `${stock.name} 분석 완료... (${completedCount}/${totalStocks})`;
+                            }
+                            if (progressPercent) {
+                                progressPercent.textContent = `${progress}%`;
+                            }
+                            
+                            return {
+                                symbol: stock.symbol,
+                                name: stock.name,
+                                market: stock.market,
+                                price: stockData.price,
+                                change: stockData.change,
+                                changePercent: stockData.changePercent,
+                                score: score,
+                                reasons: reasons,
+                                per: stockData.per,
+                                pbr: stockData.pbr,
+                                roe: stockData.roe,
+                                revenueGrowth: stockData.revenueGrowth,
+                                debtToEquity: stockData.debtToEquity,
+                                isRealData: stockData.isRealData || false
+                            };
+                        }
+                    } catch (err) {
+                        console.warn(`Failed to fetch data for ${stock.symbol}:`, err);
+                        completedCount++;
                     }
-                } catch (err) {
-                    console.warn(`Failed to fetch data for ${stock.symbol}:`, err);
-                }
+                    return null;
+                });
 
-                // API 호출 제한을 고려한 딜레이
-                await new Promise(resolve => setTimeout(resolve, 200));
+                // 배치 결과 대기
+                const batchResults = await Promise.all(batchPromises);
+                batchResults.forEach(result => {
+                    if (result) {
+                        recommendations.push(result);
+                    }
+                });
+
+                // 배치 간 짧은 딜레이 (API 제한 방지)
+                if (i + batchSize < totalStocks) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
             }
 
             // 점수 기준으로 정렬
