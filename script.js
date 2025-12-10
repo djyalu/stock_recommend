@@ -1050,25 +1050,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 const changePercent = (change / previousClose) * 100;
                 const volume = quote.volume[quote.volume.length - 1] || 0;
 
-                // Try to get real financial data from Yahoo Finance API
-                const yahooFinancialData = await fetchYahooFinancialData(ticker);
-                isRealData = !!yahooFinancialData;
+                // Try to get real financial data (FMP API 우선, 없으면 Yahoo Finance)
+                let financialData = null;
+                let dataSource = 'simulation';
+                
+                // 1. FMP API 시도 (더 정확한 데이터)
+                const fmpData = await fetchFmpData(ticker);
+                if (fmpData) {
+                    financialData = {
+                        per: fmpData.per || null,
+                        pbr: fmpData.pbr || null,
+                        roe: fmpData.roe || null,
+                        debtToEquity: fmpData.debtToEquity || null,
+                        revenueGrowth: fmpData.revenueGrowth || null,
+                        dividendYield: fmpData.dividendYield || 0,
+                        eps: fmpData.eps || null,
+                        marketCap: fmpData.marketCap || null
+                    };
+                    dataSource = 'fmp';
+                    console.log('✅ Using REAL financial data from FMP API');
+                } else {
+                    // 2. Yahoo Finance API 시도
+                    const yahooFinancialData = await fetchYahooFinancialData(ticker);
+                    if (yahooFinancialData) {
+                        financialData = {
+                            per: yahooFinancialData.per || null,
+                            pbr: yahooFinancialData.pbr || null,
+                            roe: yahooFinancialData.roe || null,
+                            debtToEquity: yahooFinancialData.debtToEquity || null,
+                            revenueGrowth: yahooFinancialData.revenueGrowth || null,
+                            dividendYield: yahooFinancialData.dividendYield || 0,
+                            eps: yahooFinancialData.eps || null,
+                            marketCap: yahooFinancialData.marketCap || null
+                        };
+                        dataSource = 'yahoo';
+                        console.log('✅ Using REAL financial data from Yahoo Finance API');
+                    }
+                }
+                
+                isRealData = !!financialData;
 
                 // Use real data if available, otherwise use simulation
-                let financialData;
-                if (yahooFinancialData) {
-                    financialData = {
-                        per: yahooFinancialData.per || null,
-                        pbr: yahooFinancialData.pbr || null,
-                        roe: yahooFinancialData.roe || null,
-                        debtToEquity: yahooFinancialData.debtToEquity || null,
-                        revenueGrowth: yahooFinancialData.revenueGrowth || null,
-                        dividendYield: yahooFinancialData.dividendYield || 0,
-                        eps: yahooFinancialData.eps || null,
-                        marketCap: yahooFinancialData.marketCap || null
-                    };
-                    console.log('✅ Using REAL financial data from Yahoo Finance API');
-                } else {
+                if (!financialData) {
                     // Simulation data (fallback) - Use seeded random for consistency
                     // Create a simple seeded random generator based on ticker
                     function seededRandom(seed) {
@@ -3159,7 +3182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         investors
     };
 
-    console.log('Stock Guru: Initializing...');
+    console.log('Stock Recommend: Initializing...');
     // Initialize
     updateLanguage();
     updateDataStatus();
@@ -3167,7 +3190,16 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFilterLabels();
     initThemeToggle();
     initShareFeature();
-    console.log('Stock Guru: Initialization complete.');
+    
+    // API 키가 없으면 기본 키 설정 (사용자가 제공한 키)
+    if (!getFmpApiKey()) {
+        // 기본 API 키 설정 (사용자가 제공한 키)
+        const defaultApiKey = 'ww44zq8zoTn1OQK67C5cJ9bQ9NshFBOK';
+        setFmpApiKey(defaultApiKey);
+        console.log('✅ FMP API 키가 자동으로 설정되었습니다.');
+    }
+    
+    console.log('Stock Recommend: Initialization complete.');
 
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
