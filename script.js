@@ -5622,23 +5622,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 차트 모달 닫기 함수
+    function closeChartModalFunc() {
+        const chartModal = document.getElementById('chartModal');
+        if (chartModal) {
+            chartModal.classList.add('hidden');
+            chartModal.style.display = 'none';
+            chartModal.style.zIndex = '';
+            console.log('✅ 차트 모달 닫기');
+        }
+    }
+    
     // 차트 모달 이벤트 리스너
     const chartModal = document.getElementById('chartModal');
     const closeChartModal = document.getElementById('closeChartModal');
     const chartRange = document.getElementById('chartRange');
     
     if (closeChartModal) {
-        closeChartModal.addEventListener('click', () => {
-            chartModal.classList.add('hidden');
+        closeChartModal.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeChartModalFunc();
         });
+        console.log('✅ 차트 모달 닫기 버튼 이벤트 리스너 등록 완료');
+    } else {
+        console.error('❌ 차트 모달 닫기 버튼을 찾을 수 없습니다');
     }
     
     if (chartModal) {
         chartModal.addEventListener('click', (e) => {
+            // 모달 배경(외부) 클릭 시 닫기
             if (e.target === chartModal) {
-                chartModal.classList.add('hidden');
+                closeChartModalFunc();
             }
         });
+        
+        // 모달 콘텐츠 클릭 시 이벤트 전파 방지
+        const modalContent = chartModal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
     }
     
     // 차트 타입 변경
