@@ -1057,7 +1057,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const PROXIES = [
         'https://corsproxy.io/?',
         'https://api.allorigins.win/get?url=',
-        'https://thingproxy.freeboard.io/fetch/',
+        'https://corsproxy.io/?',
+        'https://api.allorigins.win/raw?url=',
         'https://cors-anywhere.herokuapp.com/',
         'https://api.codetabs.com/v1/proxy?quest='
     ];
@@ -4568,18 +4569,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 historicalData = await fetchHistoricalData(symbol, range);
             } catch (proxyError) {
                 console.error('프록시를 통한 데이터 가져오기 실패:', proxyError);
-                // 사용자에게 친화적인 메시지 표시
-                chartContainer.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; gap: 1rem; color: var(--text-muted); text-align: center; padding: 2rem;">
-                        <div style="font-size: 3rem;">⚠️</div>
-                        <div style="font-size: 1.25rem; font-weight: 600; color: var(--text);">차트 데이터를 불러올 수 없습니다</div>
-                        <div style="font-size: 0.875rem;">CORS 프록시 서버에 연결할 수 없습니다.<br>잠시 후 다시 시도해주세요.</div>
-                        <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: var(--gradient-primary); border: none; border-radius: var(--radius-md); color: white; font-weight: 600; cursor: pointer; margin-top: 1rem;">
-                            페이지 새로고침
-                        </button>
-                    </div>
-                `;
-                return;
+                
+                // 프록시 실패 시 시뮬레이션 데이터 생성 (최소한의 차트 표시)
+                console.log('시뮬레이션 차트 데이터 생성 중...');
+                historicalData = generateSimulatedChartData(symbol, range);
+                
+                if (!historicalData || historicalData.length === 0) {
+                    // 시뮬레이션도 실패한 경우
+                    chartContainer.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; gap: 1rem; color: var(--text-muted); text-align: center; padding: 2rem;">
+                            <div style="font-size: 3rem;">⚠️</div>
+                            <div style="font-size: 1.25rem; font-weight: 600; color: var(--text);">차트 데이터를 불러올 수 없습니다</div>
+                            <div style="font-size: 0.875rem;">CORS 프록시 서버에 연결할 수 없습니다.<br>잠시 후 다시 시도해주세요.</div>
+                            <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: var(--gradient-primary); border: none; border-radius: var(--radius-md); color: white; font-weight: 600; cursor: pointer; margin-top: 1rem;">
+                                페이지 새로고침
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 시뮬레이션 데이터 사용 알림
+                const warningMsg = document.createElement('div');
+                warningMsg.style.cssText = 'padding: 1rem; margin-bottom: 1rem; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); color: var(--warning); font-size: 0.875rem; text-align: center;';
+                warningMsg.textContent = '⚠️ 실제 데이터를 불러올 수 없어 시뮬레이션 차트를 표시합니다.';
+                chartContainer.parentElement.insertBefore(warningMsg, chartContainer);
             }
             
             if (!historicalData || historicalData.length === 0) {
