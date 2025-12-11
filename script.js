@@ -2181,6 +2181,7 @@ document.addEventListener('DOMContentLoaded', () => {
             newBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation();
                 
                 const symbol = newBtn.dataset.symbol;
                 const name = newBtn.dataset.name || symbol;
@@ -2189,13 +2190,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (symbol) {
                     try {
+                        console.log('🚀 renderChart 호출 시작 (직접 바인딩)...');
                         await renderChart(symbol, name);
+                        console.log('✅ renderChart 완료 (직접 바인딩)');
                     } catch (error) {
-                        console.error('차트 렌더링 오류:', error);
+                        console.error('❌ 차트 렌더링 오류:', error);
+                        console.error('❌ 에러 스택:', error.stack);
                         alert(`차트를 불러오는 중 오류가 발생했습니다: ${error.message}`);
                     }
+                } else {
+                    console.error('❌ 차트 버튼에 symbol이 없습니다', newBtn);
                 }
-            });
+            }, true); // capture phase에서 처리
         });
         console.log('✅ 차트 버튼 이벤트 리스너 직접 바인딩 완료');
     }
