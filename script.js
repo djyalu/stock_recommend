@@ -1126,6 +1126,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchStockData(ticker) {
         try {
+            // 한국 주식인 경우 네이버 금융 API 사용
+            const isKoreanStock = ticker.includes('.KS');
+            if (isKoreanStock) {
+                const stockCode = ticker.replace('.KS', '').padStart(6, '0');
+                const naverData = await fetchNaverStockData(stockCode);
+                
+                if (naverData) {
+                    // 네이버 데이터를 사용하여 기본 정보 구성
+                    const currentPrice = naverData.price || 0;
+                    const previousClose = naverData.prevClose || currentPrice;
+                    const change = naverData.change || 0;
+                    const changePercent = naverData.changePercent || 0;
+                    const volume = naverData.volume || 0;
+                    
+                    // FMP API로 재무 데이터 가져오기 시도
+                    let financialData = null;
+                    const fmpData = await fetchFmpData(ticker);
+                    if (fmpData) {
+                        financialData = {
+                            per: fmpData.per || null,
+                            pbr: fmpData.pbr || null,
+                            roe: fmpData.roe || null,
+                            debtToEquity: fmpData.debtToEquity || null,
+                            revenueGrowth: fmpData.revenueGrowth || null,
+                            dividendYield: fmpData.dividendYield || 0,
+                            eps: fmpData.eps || null,
+                            marketCap: fmpData.marketCap || naverData.marketCap || null
+                        };
+                        isRealData = true;
+                        console.log('✅ 한국 주식: 네이버 금융 API + FMP API 사용');
+                    } else {
+                        // FMP 실패 시 시뮬레이션 데이터 사용
+                        financialData = generateSimulatedFinancialData(ticker);
+                        isRealData = false;
+                        console.log('⚠️ 한국 주식: 네이버 금융 API 사용 (재무 데이터는 시뮬레이션)');
+                    }
+                    
+                    updateDataStatus();
+                    
+                    return {
+                        ticker: ticker,
+                        price: currentPrice,
+                        change: change,
+                        changePercent: changePercent,
+                        volume: volume,
+                        ...financialData,
+                        isRealData: isRealData
+                    };
+                } else {
+                    console.warn(`⚠️ 네이버 금융 API 실패 (${ticker}), Yahoo Finance로 폴백`);
+                }
+            }
+            
+            // 미국 주식이거나 네이버 API 실패 시 Yahoo Finance 사용
             const targetUrl = `${BASE_URL}/v8/finance/chart/${ticker}?interval=1d&range=1d`;
             const data = await fetchWithProxy(targetUrl);
 
@@ -1268,116 +1322,161 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ========== News-Based Stock Recommendation System ==========
     
-    // 네이버 금융 뉴스 스크래핑
+    // 시뮬레이션 재무 데이터 생성 함수
+    function generateSimulatedFinancialData(ticker) {
+        // Simulation data (fallback) - Use seeded random for consistency
+        // Create a simple seeded random generator based on ticker
+        function seededRandom(seed) {
+            let value = seed;
+            return function() {
+                value = (value * 9301 + 49297) % 233280;
+                return value / 233280;
+            };
+        }
+        
+        // Generate seed from ticker string (consistent for same ticker)
+        let seed = 0;
+        for (let i = 0; i < ticker.length; i++) {
+            seed = ((seed << 5) - seed) + ticker.charCodeAt(i);
+            seed = seed & seed; // Convert to 32bit integer
+        }
+        seed = Math.abs(seed);
+        
+        const random = seededRandom(seed);
+        
+        // Use fixed base price for simulation (not currentPrice which changes)
+        // This ensures PER and EPS are consistent
+        const basePrice = 100 + (random() * 200); // Fixed for this ticker
+        
+        const financialData = {
+            per: Math.abs(basePrice / (random() * 10 + 1)),
+            pbr: random() * 5 + 1,
+            roe: random() * 20 + 5,
+            debtToEquity: random() * 100,
+            revenueGrowth: random() * 20,
+            dividendYield: random() * 3,
+            eps: basePrice / (random() * 20 + 5),
+            marketCap: 0
+        };
+        
+        // Use seeded random for sentiment (fixed for this ticker)
+        const sentimentRandom = random();
+        // Use fixed sentiment based on seed, not actual price change
+        financialData.sentiment = sentimentRandom * 0.4 + 0.5; // 0.5 to 0.9 range
+        
+        // Also fix changePercent for simulation consistency
+        // This ensures guru advice is consistent
+        const changePercentRandom = random();
+        financialData.simulatedChangePercent = (changePercentRandom - 0.5) * 6; // -3% to +3% range
+        
+        return financialData;
+    }
+    
+    // 네이버 금융 주식 정보 API (사용 안 함 - fetchNaverStockData로 대체)
+    async function fetchNaverFinanceStockInfo(stockCode) {
+        try {
+            // 네이버 금융 API: 종목 요약 정보
+            // stockCode는 6자리 숫자 (예: 005930)
+            const cleanCode = stockCode.replace('.KS', '').replace(/^0+/, '') || stockCode;
+            const apiUrl = `https://api.finance.naver.com/service/itemSummary.nhn?itemcode=${cleanCode}`;
+            
+            // CORS 프록시를 통해 API 호출
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+            
+            if (data.contents) {
+                try {
+                    const jsonData = JSON.parse(data.contents);
+                    return jsonData;
+                } catch (e) {
+                    console.warn('네이버 금융 API JSON 파싱 실패:', e);
+                    return null;
+                }
+            }
+            return null;
+        } catch (error) {
+            console.warn(`네이버 금융 주식 정보 조회 실패 (${stockCode}):`, error);
+            return null;
+        }
+    }
+    
+    // 네이버 금융에서 한국 주식 뉴스 가져오기 (주식 정보 기반)
     async function fetchNaverFinanceNews() {
         try {
-            console.log('📰 네이버 금융 뉴스 스크래핑 시작...');
+            console.log('📰 네이버 금융 주식 정보 기반 뉴스 수집 시작...');
             const allNews = [];
-            let successCount = 0;
             
-            // 네이버 금융 뉴스 URL들
-            const naverUrls = [
-                'https://finance.naver.com/news/news_list.naver?mode=LSS2D&section_id=101&section_id2=258', // 종목뉴스
-                'https://finance.naver.com/news/news_list.naver?mode=LSS2D&section_id=101&section_id2=259', // 시황뉴스
-                'https://finance.naver.com/news/news_list.naver?mode=LSS2D&section_id=101&section_id2=260'  // 산업뉴스
+            // 주요 한국 주식 종목 코드들
+            const koreanStocks = [
+                { code: '005930', name: '삼성전자' },
+                { code: '000660', name: 'SK하이닉스' },
+                { code: '035420', name: 'NAVER' },
+                { code: '035720', name: '카카오' },
+                { code: '051910', name: 'LG화학' },
+                { code: '006400', name: '삼성SDI' },
+                { code: '005380', name: '현대차' },
+                { code: '096770', name: 'SK이노베이션' },
+                { code: '003670', name: '포스코' },
+                { code: '017670', name: 'SK텔레콤' }
             ];
             
-            for (const url of naverUrls) {
+            // 각 종목의 최신 뉴스 가져오기
+            for (const stock of koreanStocks.slice(0, 10)) {
                 try {
-                    // CORS 프록시를 통해 네이버 뉴스 페이지 가져오기
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                    // 네이버 금융 종목 페이지에서 뉴스 가져오기
+                    const stockPageUrl = `https://finance.naver.com/item/news.naver?code=${stock.code}`;
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(stockPageUrl)}`;
                     const response = await fetch(proxyUrl);
                     const data = await response.json();
                     
                     if (data.contents) {
-                        // HTML 파싱을 위한 임시 DOM 생성
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(data.contents, 'text/html');
                         
                         // 뉴스 리스트 찾기
-                        const newsItems = doc.querySelectorAll('.newsList li, .articleSubject, .articleSummary');
+                        const newsItems = doc.querySelectorAll('.newsList li, .articleSubject, tr[onclick*="news_read"]');
                         
-                        if (newsItems.length === 0) {
-                            // 다른 선택자 시도
-                            const articleLinks = doc.querySelectorAll('a[href*="/news/news_read.naver"]');
+                        newsItems.forEach((item, index) => {
+                            if (index >= 5) return; // 종목당 최대 5개
                             
-                            articleLinks.forEach((link, index) => {
-                                if (index >= 20) return; // 최대 20개
-                                
+                            const link = item.querySelector('a');
+                            if (link) {
                                 const headline = link.textContent.trim();
                                 const href = link.getAttribute('href');
                                 const fullUrl = href.startsWith('http') ? href : `https://finance.naver.com${href}`;
                                 
-                                // 부모 요소에서 날짜 찾기
-                                const parent = link.closest('li, div, tr');
-                                let dateText = '';
-                                if (parent) {
-                                    const dateEl = parent.querySelector('.date, .wdate');
-                                    if (dateEl) {
-                                        dateText = dateEl.textContent.trim();
-                                    }
-                                }
+                                // 날짜 찾기
+                                const dateEl = item.querySelector('.date, .wdate, td.date');
+                                const dateText = dateEl ? dateEl.textContent.trim() : '';
                                 
                                 if (headline && !allNews.find(n => n.headline === headline)) {
                                     allNews.push({
-                                        headline: headline,
+                                        headline: `${stock.name}: ${headline}`,
                                         summary: '',
                                         source: '네이버 금융',
                                         url: fullUrl,
                                         publishTime: parseNaverDate(dateText) || Date.now() / 1000
                                     });
                                 }
-                            });
-                        } else {
-                            newsItems.forEach((item, index) => {
-                                if (index >= 20) return;
-                                
-                                const link = item.querySelector('a');
-                                if (link) {
-                                    const headline = link.textContent.trim();
-                                    const href = link.getAttribute('href');
-                                    const fullUrl = href.startsWith('http') ? href : `https://finance.naver.com${href}`;
-                                    
-                                    const summaryEl = item.querySelector('.summary, .articleSummary');
-                                    const summary = summaryEl ? summaryEl.textContent.trim() : '';
-                                    
-                                    const dateEl = item.querySelector('.date, .wdate');
-                                    const dateText = dateEl ? dateEl.textContent.trim() : '';
-                                    
-                                    if (headline && !allNews.find(n => n.headline === headline)) {
-                                        allNews.push({
-                                            headline: headline,
-                                            summary: summary,
-                                            source: '네이버 금융',
-                                            url: fullUrl,
-                                            publishTime: parseNaverDate(dateText) || Date.now() / 1000
-                                        });
-                                        successCount++;
-                                    }
-                                }
-                            });
-                        }
-                    } else {
-                        console.warn(`⚠️ 네이버 뉴스 페이지 응답 없음: ${url}`);
+                            }
+                        });
                     }
                 } catch (err) {
-                    console.warn(`❌ 네이버 뉴스 스크래핑 실패 (${url}):`, err);
+                    console.warn(`종목 뉴스 수집 실패 (${stock.name}):`, err);
                 }
                 
                 // API 제한 방지
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
             
             // 최신순 정렬
             allNews.sort((a, b) => b.publishTime - a.publishTime);
             
-            console.log(`✅ 네이버 뉴스 ${allNews.length}개 수집 완료 (성공: ${successCount}개)`);
-            if (allNews.length === 0) {
-                console.error('❌ 네이버 뉴스 수집 실패 - 빈 배열 반환');
-            }
+            console.log(`✅ 네이버 금융 뉴스 ${allNews.length}개 수집 완료`);
             return allNews.slice(0, 30); // 상위 30개
         } catch (error) {
-            console.error('네이버 뉴스 스크래핑 오류:', error);
+            console.error('네이버 금융 뉴스 수집 오류:', error);
             return [];
         }
     }
