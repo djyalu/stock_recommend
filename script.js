@@ -4530,19 +4530,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // 차트 렌더링
     async function renderChart(symbol, name, range = '3mo') {
         const modal = document.getElementById('chartModal');
-        const canvas = document.getElementById('chartCanvas');
         const chartTitle = document.getElementById('chartTitle');
+        const chartContainer = document.querySelector('.chart-container-wrapper');
         
-        if (!modal || !canvas) return;
+        if (!modal) {
+            console.error('차트 모달을 찾을 수 없습니다');
+            return;
+        }
+        
+        if (!chartContainer) {
+            console.error('차트 컨테이너를 찾을 수 없습니다');
+            return;
+        }
         
         modal.classList.remove('hidden');
-        chartTitle.textContent = `📈 ${name} (${symbol}) - 차트 분석`;
+        if (chartTitle) {
+            chartTitle.textContent = `📈 ${name} (${symbol}) - 차트 분석`;
+        }
         
         // 로딩 표시
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.parentElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--text-muted);">차트 데이터 로딩 중...</div>';
-        canvas.parentElement.innerHTML = `<canvas id="chartCanvas"></canvas>`;
+        chartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--text-muted);">차트 데이터 로딩 중...</div>';
         
         try {
             // 과거 데이터 가져오기
@@ -4596,8 +4603,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }`;
             signalEl.title = tradingSignal.description;
             
+            // 차트 컨테이너에 canvas 다시 생성
+            chartContainer.innerHTML = '<canvas id="chartCanvas"></canvas>';
+            
             // Chart.js로 차트 렌더링
             const chartCanvas = document.getElementById('chartCanvas');
+            if (!chartCanvas) {
+                throw new Error('차트 캔버스를 생성할 수 없습니다');
+            }
+            
             if (chartInstance) {
                 chartInstance.destroy();
             }
@@ -4796,7 +4810,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (error) {
             console.error('차트 렌더링 실패:', error);
-            canvas.parentElement.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--danger);">차트 데이터를 불러올 수 없습니다: ${error.message}</div>`;
+            if (chartContainer) {
+                chartContainer.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--danger);">차트 데이터를 불러올 수 없습니다: ${error.message}</div>`;
+            }
         }
     }
 
@@ -4861,12 +4877,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // 차트 버튼 클릭 이벤트 (이벤트 위임 사용)
     document.addEventListener('click', async (e) => {
         if (e.target.closest('.chart-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const btn = e.target.closest('.chart-btn');
             const symbol = btn.dataset.symbol;
             const name = btn.dataset.name || symbol;
             
+            console.log('차트 버튼 클릭됨:', { symbol, name });
+            
             if (symbol) {
-                await renderChart(symbol, name);
+                try {
+                    await renderChart(symbol, name);
+                } catch (error) {
+                    console.error('차트 렌더링 오류:', error);
+                    alert(`차트를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+                }
+            } else {
+                console.error('차트 버튼에 symbol이 없습니다');
             }
         }
     });
