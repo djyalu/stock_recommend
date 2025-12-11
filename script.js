@@ -1273,6 +1273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             console.log('📰 네이버 금융 뉴스 스크래핑 시작...');
             const allNews = [];
+            let successCount = 0;
             
             // 네이버 금융 뉴스 URL들
             const naverUrls = [
@@ -1351,13 +1352,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                             url: fullUrl,
                                             publishTime: parseNaverDate(dateText) || Date.now() / 1000
                                         });
+                                        successCount++;
                                     }
                                 }
                             });
                         }
+                    } else {
+                        console.warn(`⚠️ 네이버 뉴스 페이지 응답 없음: ${url}`);
                     }
                 } catch (err) {
-                    console.warn(`네이버 뉴스 스크래핑 실패 (${url}):`, err);
+                    console.warn(`❌ 네이버 뉴스 스크래핑 실패 (${url}):`, err);
                 }
                 
                 // API 제한 방지
@@ -1367,7 +1371,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // 최신순 정렬
             allNews.sort((a, b) => b.publishTime - a.publishTime);
             
-            console.log(`✅ 네이버 뉴스 ${allNews.length}개 수집 완료`);
+            console.log(`✅ 네이버 뉴스 ${allNews.length}개 수집 완료 (성공: ${successCount}개)`);
+            if (allNews.length === 0) {
+                console.error('❌ 네이버 뉴스 수집 실패 - 빈 배열 반환');
+            }
             return allNews.slice(0, 30); // 상위 30개
         } catch (error) {
             console.error('네이버 뉴스 스크래핑 오류:', error);
@@ -1487,35 +1494,35 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Yahoo Finance 뉴스 가져오기 (기존 로직 분리)
     async function fetchYahooFinanceNews(searchTerms) {
-        const allNews = [];
-        
+            const allNews = [];
+            
         for (const term of searchTerms.slice(0, 3)) {
-            try {
-                const targetUrl = `${BASE_URL}/v1/finance/search?q=${encodeURIComponent(term)}&quotesCount=0&newsCount=10`;
-                const data = await fetchWithProxy(targetUrl);
-                
-                if (data.news && data.news.length > 0) {
-                    data.news.forEach(item => {
-                        // 중복 제거
-                        if (!allNews.find(n => n.headline === item.title)) {
-                            allNews.push({
-                                headline: item.title,
-                                summary: item.type || '',
-                                source: item.publisher || item.provider_name || 'Yahoo Finance',
-                                url: item.link,
-                                publishTime: item.provider_publish_time || Date.now() / 1000
-                            });
-                        }
-                    });
+                try {
+                    const targetUrl = `${BASE_URL}/v1/finance/search?q=${encodeURIComponent(term)}&quotesCount=0&newsCount=10`;
+                    const data = await fetchWithProxy(targetUrl);
+                    
+                    if (data.news && data.news.length > 0) {
+                        data.news.forEach(item => {
+                            // 중복 제거
+                            if (!allNews.find(n => n.headline === item.title)) {
+                                allNews.push({
+                                    headline: item.title,
+                                    summary: item.type || '',
+                                    source: item.publisher || item.provider_name || 'Yahoo Finance',
+                                    url: item.link,
+                                    publishTime: item.provider_publish_time || Date.now() / 1000
+                                });
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.warn(`Failed to fetch news for ${term}:`, err);
                 }
-            } catch (err) {
-                console.warn(`Failed to fetch news for ${term}:`, err);
+                
+                // API 제한 방지
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
             
-            // API 제한 방지
-            await new Promise(resolve => setTimeout(resolve, 300));
-        }
-        
         return allNews;
     }
 
@@ -2083,7 +2090,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 선택된 시장 타입에 맞게 필터링
             const filteredRecommendations = recommendations.filter(rec => rec.market === selectedMarket);
             console.log(`📊 시장 타입 필터링 (${selectedMarket}): ${recommendations.length}개 → ${filteredRecommendations.length}개`);
-            
+
             // 점수 기준으로 정렬
             filteredRecommendations.sort((a, b) => b.score - a.score);
             
