@@ -4946,7 +4946,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         intersect: false
                     }
                 }
-            });
+                });
+                
+                console.log('✅ Chart.js 인스턴스 생성 완료');
+            } catch (chartError) {
+                console.error('❌ Chart.js 생성 오류:', chartError);
+                throw new Error(`차트 생성 실패: ${chartError.message}`);
+            }
             
             // MACD 차트가 별도로 필요한 경우 (추후 구현 가능)
             if (showMACD) {
