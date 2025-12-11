@@ -1998,8 +1998,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         recommendations.forEach((rec, index) => {
             const marketFlag = rec.market === 'KR' ? '🇰🇷' : '🇺🇸';
+            const marketText = rec.market === 'KR' ? '한국' : '미국';
             const changeClass = rec.changePercent >= 0 ? 'positive' : 'negative';
             const changeSign = rec.changePercent >= 0 ? '+' : '';
+            
+            // 가격 포맷팅 (한국: 원, 미국: 달러)
+            const formatPrice = (price) => {
+                if (typeof price !== 'number') return price;
+                if (rec.market === 'KR') {
+                    // 한국 주식: 원화, 소수점 없이, 천단위 구분
+                    return '₩' + Math.round(price).toLocaleString('ko-KR');
+                } else {
+                    // 미국 주식: 달러, 소수점 2자리, 천단위 구분
+                    return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            };
+            
+            const formatMA20 = (ma20) => {
+                if (ma20 === null || ma20 === undefined) return '';
+                if (rec.market === 'KR') {
+                    return '₩' + Math.round(ma20).toLocaleString('ko-KR');
+                } else {
+                    return '$' + ma20.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            };
             
             summaryHTML += `
                 <div class="summary-card ${rec.score >= 60 ? 'high' : rec.score >= 30 ? 'medium' : 'low'}">
@@ -2007,18 +2029,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="summary-info">
                         <div class="summary-header">
                             <span class="summary-flag">${marketFlag}</span>
+                            <span class="summary-market-badge ${rec.market === 'KR' ? 'market-kr' : 'market-us'}">${marketText}</span>
                             <span class="summary-name">${rec.name}</span>
                             <span class="summary-symbol">${rec.symbol}</span>
                         </div>
                         <div class="summary-score">추천 점수: <strong>${rec.score.toFixed(1)}</strong></div>
                         <div class="summary-price">
-                            <span class="price-value">$${typeof rec.price === 'number' ? rec.price.toFixed(2) : rec.price}</span>
+                            <span class="price-value">${formatPrice(rec.price)}</span>
                             <span class="price-change ${changeClass}">${changeSign}${rec.changePercent.toFixed(2)}%</span>
                         </div>
                         ${rec.ma20 !== null && rec.ma20 !== undefined ? `
                         <div class="summary-ma20">
                             <span class="ma20-label">20일선:</span>
-                            <span class="ma20-value">$${rec.ma20.toFixed(2)}</span>
+                            <span class="ma20-value">${formatMA20(rec.ma20)}</span>
                             <span class="trading-signal ${rec.price < rec.ma20 ? 'buy-signal' : 'wait-signal'}" style="font-weight: 600; margin-left: 0.5rem;">
                                 ${rec.price < rec.ma20 ? 'BUY' : 'WAIT'}
                             </span>
@@ -2046,9 +2069,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         recommendations.forEach((rec, index) => {
             const marketFlag = rec.market === 'KR' ? '🇰🇷' : '🇺🇸';
-            const priceValue = typeof rec.price === 'number' 
-                ? rec.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                : rec.price;
+            const marketText = rec.market === 'KR' ? '한국' : '미국';
+            
+            // 가격 포맷팅 (한국: 원, 미국: 달러)
+            const formatPrice = (price) => {
+                if (typeof price !== 'number') return price;
+                if (rec.market === 'KR') {
+                    // 한국 주식: 원화, 소수점 없이, 천단위 구분
+                    return '₩' + Math.round(price).toLocaleString('ko-KR');
+                } else {
+                    // 미국 주식: 달러, 소수점 2자리, 천단위 구분
+                    return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            };
+            
+            const formatMA20 = (ma20) => {
+                if (ma20 === null || ma20 === undefined) return '';
+                if (rec.market === 'KR') {
+                    return '₩' + Math.round(ma20).toLocaleString('ko-KR');
+                } else {
+                    return '$' + ma20.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            };
             
             const changeClass = rec.changePercent >= 0 ? 'positive' : 'negative';
             const changeSign = rec.changePercent >= 0 ? '+' : '';
@@ -2059,6 +2101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="detail-title-section">
                             <span class="detail-rank">#${index + 1}</span>
                             <span class="detail-flag">${marketFlag}</span>
+                            <span class="detail-market-badge ${rec.market === 'KR' ? 'market-kr' : 'market-us'}">${marketText}</span>
                             <div class="detail-name-group">
                                 <h3 class="detail-name">${rec.name}</h3>
                                 <span class="detail-symbol">${rec.symbol}</span>
@@ -2076,7 +2119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="detail-metrics-grid">
                                 <div class="detail-metric">
                                     <span class="metric-label">현재가</span>
-                                    <span class="metric-value">$${priceValue}</span>
+                                    <span class="metric-value">${formatPrice(rec.price)}</span>
                                 </div>
                                 <div class="detail-metric">
                                     <span class="metric-label">변동률</span>
@@ -2091,7 +2134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${rec.ma20 !== null && rec.ma20 !== undefined ? `
                                 <div class="detail-metric">
                                     <span class="metric-label">20일선</span>
-                                    <span class="metric-value">$${rec.ma20.toFixed(2)}</span>
+                                    <span class="metric-value">${formatMA20(rec.ma20)}</span>
                                 </div>
                                 <div class="detail-metric">
                                     <span class="metric-label">매매 신호</span>
