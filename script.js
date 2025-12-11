@@ -4518,6 +4518,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initThemeToggle() {
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
+        console.log('🎨 테마 초기화:', savedTheme);
         
         const themeBtn = document.getElementById('themeToggle');
         if (themeBtn) {
@@ -4525,10 +4526,14 @@ document.addEventListener('DOMContentLoaded', () => {
             themeBtn.addEventListener('click', () => {
                 const currentTheme = document.documentElement.getAttribute('data-theme');
                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                console.log('🎨 테마 전환:', currentTheme, '→', newTheme);
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
                 updateThemeButton(newTheme);
+                console.log('✅ 테마 전환 완료:', newTheme);
             });
+        } else {
+            console.error('❌ 테마 토글 버튼을 찾을 수 없습니다');
         }
     }
 
@@ -4538,6 +4543,9 @@ document.addEventListener('DOMContentLoaded', () => {
             themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
             themeBtn.setAttribute('aria-label', theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환');
             themeBtn.title = theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환';
+            console.log('🎨 테마 버튼 업데이트:', theme, '아이콘:', themeBtn.textContent);
+        } else {
+            console.error('❌ 테마 버튼을 찾을 수 없습니다');
         }
     }
 
