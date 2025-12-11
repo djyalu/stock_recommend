@@ -5006,11 +5006,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartType = document.getElementById('chartType');
     if (chartType) {
         chartType.addEventListener('change', async (e) => {
-            if (currentChartSymbol) {
+            if (window.currentChartSymbol) {
                 const chartTitleEl = document.getElementById('chartTitle');
-                const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : currentChartSymbol;
+                const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : window.currentChartSymbol;
                 const range = chartRange?.value || '3mo';
-                await renderChart(currentChartSymbol, name, range);
+                await renderChart(window.currentChartSymbol, name, range);
             }
         });
     }
