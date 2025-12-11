@@ -4925,20 +4925,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     yAxisID: 'y1',
                     tension: 0.1
                 });
-                // Histogram (MACD - Signal)
+                // Histogram (MACD - Signal) - 라인 차트로 표시
                 if (macd.histogram) {
                     datasets.push({
                         label: 'Histogram',
                         data: macd.histogram,
-                        type: 'bar',
-                        backgroundColor: macd.histogram.map((val, idx) => 
-                            val >= 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'
-                        ),
                         borderColor: macd.histogram.map((val, idx) => 
-                            val >= 0 ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'
+                            val >= 0 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)'
                         ),
-                        borderWidth: 1,
-                        yAxisID: 'y1'
+                        backgroundColor: macd.histogram.map((val, idx) => 
+                            val >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'
+                        ),
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 0,
+                        yAxisID: 'y1',
+                        tension: 0.1
                     });
                 }
             }
