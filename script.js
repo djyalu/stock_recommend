@@ -1328,6 +1328,52 @@ document.addEventListener('DOMContentLoaded', () => {
         return financialData;
     }
     
+    // 네이버 금융 주식 데이터 가져오기
+    async function fetchNaverStockData(stockCode) {
+        try {
+            // stockCode는 6자리 숫자 (예: 005930)
+            const cleanCode = stockCode.padStart(6, '0');
+            console.log(`📊 네이버 금융 주식 데이터 조회: ${cleanCode}`);
+            
+            // 네이버 금융 API: 종목 요약 정보
+            const apiUrl = `https://api.finance.naver.com/service/itemSummary.nhn?itemcode=${cleanCode}`;
+            
+            // CORS 프록시를 통해 API 호출
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+            
+            if (data.contents) {
+                try {
+                    const jsonData = JSON.parse(data.contents);
+                    
+                    // 네이버 금융 데이터를 표준 형식으로 변환
+                    const result = {
+                        price: jsonData.now || jsonData.tradePrice || 0,
+                        change: jsonData.change || jsonData.changePrice || 0,
+                        changePercent: jsonData.changeRate ? jsonData.changeRate * 100 : 0,
+                        volume: jsonData.volume || 0,
+                        marketCap: jsonData.marketSum || 0,
+                        high: jsonData.high || 0,
+                        low: jsonData.low || 0,
+                        open: jsonData.open || 0,
+                        prevClose: jsonData.prevClose || jsonData.yesterday || 0
+                    };
+                    
+                    console.log(`✅ 네이버 금융 데이터 수집 성공: ${cleanCode}`, result);
+                    return result;
+                } catch (e) {
+                    console.warn('네이버 금융 API JSON 파싱 실패:', e);
+                    return null;
+                }
+            }
+            return null;
+        } catch (error) {
+            console.warn(`❌ 네이버 금융 주식 데이터 조회 실패 (${stockCode}):`, error);
+            return null;
+        }
+    }
+    
     // 네이버 금융 주식 정보 API (사용 안 함 - fetchNaverStockData로 대체)
     async function fetchNaverFinanceStockInfo(stockCode) {
         try {
