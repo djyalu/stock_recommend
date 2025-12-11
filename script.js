@@ -1774,6 +1774,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (stockData) {
                             const { score, reasons, explanations } = calculateRecommendationScore(stockData);
                             
+                            // 20일선 계산 (최소한의 데이터만 가져와서 빠르게 계산)
+                            let ma20 = null;
+                            try {
+                                const historicalData = await fetchHistoricalData(symbol, '1mo', '1d').catch(() => null);
+                                if (historicalData && historicalData.length >= 20) {
+                                    const closes = historicalData.map(d => d.close);
+                                    const ma20Array = calculateMA(closes, 20);
+                                    // 마지막 유효한 20일선 값 사용
+                                    for (let i = ma20Array.length - 1; i >= 0; i--) {
+                                        if (ma20Array[i] !== null && ma20Array[i] !== undefined) {
+                                            ma20 = ma20Array[i];
+                                            break;
+                                        }
+                                    }
+                                }
+                            } catch (err) {
+                                console.warn(`⚠️ ${symbol} 20일선 계산 실패:`, err.message);
+                            }
+                            
                             completedCount++;
                             
                             // 진행 상황 업데이트
@@ -1812,7 +1831,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 revenueGrowth: stockData.revenueGrowth,
                                 debtToEquity: stockData.debtToEquity,
                                 isRealData: stockData.isRealData || false,
-                                relatedNews: relatedNews
+                                relatedNews: relatedNews,
+                                ma20: ma20
                             };
                         } else {
                             console.warn(`⚠️ ${symbol} (${stockInfo.name}): stockData가 null입니다.`);
@@ -1995,6 +2015,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="price-value">$${typeof rec.price === 'number' ? rec.price.toFixed(2) : rec.price}</span>
                             <span class="price-change ${changeClass}">${changeSign}${rec.changePercent.toFixed(2)}%</span>
                         </div>
+                        ${rec.ma20 !== null && rec.ma20 !== undefined ? `
+                        <div class="summary-ma20">
+                            <span class="ma20-label">20일선:</span>
+                            <span class="ma20-value">$${rec.ma20.toFixed(2)}</span>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -2057,6 +2083,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="detail-metric">
                                     <span class="metric-label">거래량</span>
                                     <span class="metric-value">${rec.volume.toLocaleString()}</span>
+                                </div>
+                                ` : ''}
+                                ${rec.ma20 !== null && rec.ma20 !== undefined ? `
+                                <div class="detail-metric">
+                                    <span class="metric-label">20일선</span>
+                                    <span class="metric-value">$${rec.ma20.toFixed(2)}</span>
                                 </div>
                                 ` : ''}
                             </div>
