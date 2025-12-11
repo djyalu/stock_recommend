@@ -4871,7 +4871,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             
-            chartInstance = new Chart(chartCanvas, {
+            window.chartInstance = new Chart(chartCanvas, {
                 type: 'line',
                 data: {
                     labels: dates.map(d => d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })),
