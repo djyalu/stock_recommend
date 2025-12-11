@@ -2798,6 +2798,30 @@ document.addEventListener('DOMContentLoaded', () => {
         initChartButtonHandler();
     }
     
+    // 테마 토글 버튼 이벤트 (즉시 등록)
+    const themeToggleBtn = document.getElementById('themeToggle');
+    if (themeToggleBtn) {
+        // 초기 테마 설정
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeButton(savedTheme);
+        
+        themeToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            console.log('🎨 테마 전환:', currentTheme, '→', newTheme);
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeButton(newTheme);
+            console.log('✅ 테마 전환 완료:', newTheme);
+        });
+        console.log('✅ 테마 토글 버튼 이벤트 리스너 등록 완료 (즉시)');
+    } else {
+        console.error('❌ 테마 토글 버튼을 찾을 수 없습니다');
+    }
+
     // 개별 종목 검색 버튼 이벤트
     if (searchStockBtn && stockSearchInput) {
         // 검색 버튼 클릭
