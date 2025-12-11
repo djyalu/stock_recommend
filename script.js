@@ -1423,24 +1423,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const recommendMarketTypeInput = document.querySelector('input[name="recommendMarketType"]:checked');
             const selectedMarket = recommendMarketTypeInput ? recommendMarketTypeInput.value : 'US';
             
+            console.log('📊 fetchStockNews 호출 - 선택된 시장:', selectedMarket);
+            console.log('📊 라디오 버튼 상태:', {
+                checked: recommendMarketTypeInput ? recommendMarketTypeInput.checked : 'null',
+                value: recommendMarketTypeInput ? recommendMarketTypeInput.value : 'null',
+                allInputs: Array.from(document.querySelectorAll('input[name="recommendMarketType"]')).map(inp => ({
+                    value: inp.value,
+                    checked: inp.checked
+                }))
+            });
+            
             let allNews = [];
             
-            // 한국 주식인 경우 네이버 뉴스 우선 사용
+            // 한국 주식인 경우 네이버 뉴스만 사용
             if (selectedMarket === 'KR') {
-                console.log('🇰🇷 한국 주식 뉴스: 네이버에서 수집');
+                console.log('🇰🇷 한국 주식 뉴스: 네이버에서 수집 시작');
                 const naverNews = await fetchNaverFinanceNews();
+                console.log(`✅ 네이버 뉴스 수집 완료: ${naverNews.length}개`);
                 allNews = allNews.concat(naverNews);
                 
-                // 네이버 뉴스가 부족하면 Yahoo Finance로 보완
-                if (allNews.length < 10) {
-                    console.log('📰 네이버 뉴스 부족, Yahoo Finance 보완');
-                    const yahooNews = await fetchYahooFinanceNews(['주식', '투자', '실적']);
-                    allNews = allNews.concat(yahooNews);
+                // 네이버 뉴스가 없거나 부족한 경우에만 경고 (Yahoo Finance로 보완하지 않음)
+                if (allNews.length === 0) {
+                    console.warn('⚠️ 네이버 뉴스 수집 실패 - 빈 배열 반환');
+                } else if (allNews.length < 5) {
+                    console.warn(`⚠️ 네이버 뉴스가 적습니다 (${allNews.length}개). 계속 진행합니다.`);
                 }
             } else {
                 // 미국 주식인 경우 Yahoo Finance 사용
-                console.log('🇺🇸 미국 주식 뉴스: Yahoo Finance에서 수집');
+                console.log('🇺🇸 미국 주식 뉴스: Yahoo Finance에서 수집 시작');
                 const yahooNews = await fetchYahooFinanceNews(['stock market', 'investment', 'earnings']);
+                console.log(`✅ Yahoo Finance 뉴스 수집 완료: ${yahooNews.length}개`);
                 allNews = allNews.concat(yahooNews);
             }
             
@@ -1458,9 +1470,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // 최신순 정렬
             uniqueNews.sort((a, b) => b.publishTime - a.publishTime);
             
+            console.log(`📰 최종 뉴스 수집 결과 (${selectedMarket}): ${uniqueNews.length}개`);
+            if (uniqueNews.length > 0) {
+                console.log('📰 수집된 뉴스 샘플:', uniqueNews.slice(0, 3).map(n => ({
+                    headline: n.headline.substring(0, 50),
+                    source: n.source
+                })));
+            }
+            
             return uniqueNews.slice(0, 30); // 상위 30개
         } catch (error) {
-            console.error('News fetch error:', error);
+            console.error('❌ News fetch error:', error);
             return [];
         }
     }
