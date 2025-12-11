@@ -1709,32 +1709,31 @@ document.addEventListener('DOMContentLoaded', () => {
             let recommendCount = recommendCountSelect ? parseInt(recommendCountSelect.value) : 10;
             const minStocksToAnalyze = Math.max(recommendCount, 15); // 최소 추천 수량만큼은 분석
             
-            // 추출된 종목이 없거나 너무 적으면 기본 종목 사용 (미국/한국 균형있게)
+            // 선택된 시장 타입 확인
+            const recommendMarketTypeInput = document.querySelector('input[name="recommendMarketType"]:checked');
+            const selectedMarket = recommendMarketTypeInput ? recommendMarketTypeInput.value : 'US';
+            console.log(`📊 선택된 시장 타입: ${selectedMarket}`);
+            
+            // 추출된 종목이 없거나 너무 적으면 기본 종목 사용 (선택된 시장 타입에 따라)
             let symbolsToAnalyze = [];
             if (extractedSymbols.length >= 3) {
-                symbolsToAnalyze = extractedSymbols;
-            } else {
-                // 미국과 한국 주식을 균형있게 선택
-                const usStocks = stockList.filter(s => s.market === 'US');
-                const krStocks = stockList.filter(s => s.market === 'KR');
-                const halfCount = Math.ceil(minStocksToAnalyze / 2);
+                // 추출된 종목 중 선택된 시장 타입만 필터링
+                symbolsToAnalyze = extractedSymbols.filter(symbol => {
+                    const isKR = symbol.includes('.KS');
+                    return selectedMarket === 'KR' ? isKR : !isKR;
+                });
+                console.log(`📊 뉴스에서 추출된 종목 (${selectedMarket} 필터링): ${symbolsToAnalyze.length}개`);
+            }
+            
+            // 추출된 종목이 부족하면 기본 종목 사용
+            if (symbolsToAnalyze.length < recommendCount) {
+                // 선택된 시장 타입에 맞는 주식만 선택
+                const filteredStocks = stockList.filter(s => s.market === selectedMarket);
+                const neededCount = Math.max(recommendCount, minStocksToAnalyze);
+                const selectedStocks = filteredStocks.slice(0, Math.min(neededCount, filteredStocks.length));
                 
-                // 미국 주식과 한국 주식을 각각 절반씩 선택
-                const selectedUS = usStocks.slice(0, Math.min(halfCount, usStocks.length));
-                const selectedKR = krStocks.slice(0, Math.min(halfCount, krStocks.length));
-                
-                // 나머지는 더 많은 쪽에서 채우기
-                const remaining = minStocksToAnalyze - selectedUS.length - selectedKR.length;
-                if (remaining > 0) {
-                    if (selectedUS.length < selectedKR.length) {
-                        selectedUS.push(...usStocks.slice(selectedUS.length, selectedUS.length + remaining));
-                    } else {
-                        selectedKR.push(...krStocks.slice(selectedKR.length, selectedKR.length + remaining));
-                    }
-                }
-                
-                symbolsToAnalyze = [...selectedUS, ...selectedKR].map(s => s.symbol);
-                console.log(`📊 기본 종목 사용: 미국 ${selectedUS.length}개, 한국 ${selectedKR.length}개`);
+                symbolsToAnalyze = selectedStocks.map(s => s.symbol);
+                console.log(`📊 기본 종목 사용 (${selectedMarket}): ${selectedStocks.length}개`);
             }
             
             console.log(`📊 분석할 종목 수: ${symbolsToAnalyze.length}개`);
@@ -1874,12 +1873,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // 선택된 시장 타입에 맞게 필터링
+            const filteredRecommendations = recommendations.filter(rec => rec.market === selectedMarket);
+            console.log(`📊 시장 타입 필터링 (${selectedMarket}): ${recommendations.length}개 → ${filteredRecommendations.length}개`);
+            
             // 점수 기준으로 정렬
-            recommendations.sort((a, b) => b.score - a.score);
+            filteredRecommendations.sort((a, b) => b.score - a.score);
             
             // 정렬 후 디버깅 로그
-            console.log(`📊 정렬 후 추천 종목 (총 ${recommendations.length}개):`);
-            recommendations.forEach((rec, idx) => {
+            console.log(`📊 정렬 후 추천 종목 (${selectedMarket}, 총 ${filteredRecommendations.length}개):`);
+            filteredRecommendations.forEach((rec, idx) => {
                 console.log(`  ${idx + 1}. ${rec.name} (${rec.symbol}): ${rec.score.toFixed(1)}점`);
             });
 
