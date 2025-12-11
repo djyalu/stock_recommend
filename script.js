@@ -5018,11 +5018,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 차트 기간 변경
     if (chartRange) {
         chartRange.addEventListener('change', async (e) => {
-            if (currentChartSymbol) {
+            if (window.currentChartSymbol) {
                 // 차트 제목에서 이름 추출 또는 symbol 사용
                 const chartTitleEl = document.getElementById('chartTitle');
-                const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : currentChartSymbol;
-                await renderChart(currentChartSymbol, name, e.target.value);
+                const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : window.currentChartSymbol;
+                await renderChart(window.currentChartSymbol, name, e.target.value);
             }
         });
     }
@@ -5035,9 +5035,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.id === 'showBollinger'
         )) {
             const chartTitleEl = document.getElementById('chartTitle');
-            const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : currentChartSymbol;
+            const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : window.currentChartSymbol;
             const range = chartRange?.value || '3mo';
-            await renderChart(currentChartSymbol, name, range);
+            await renderChart(window.currentChartSymbol, name, range);
         }
     });
 
