@@ -4535,8 +4535,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateThemeButton(theme) {
         const themeBtn = document.getElementById('themeToggle');
         if (themeBtn) {
-            themeBtn.innerHTML = theme === 'dark' ? '☀️' : '🌙';
-            themeBtn.title = theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+            themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+            themeBtn.setAttribute('aria-label', theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환');
+            themeBtn.title = theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환';
         }
     }
 
