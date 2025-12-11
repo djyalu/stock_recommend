@@ -2168,6 +2168,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 전체 HTML 조합
         resultsSection.innerHTML = newsHTML + summaryHTML + detailsHTML;
+        
+        // 동적으로 생성된 차트 버튼에 이벤트 리스너 추가
+        const chartButtons = resultsSection.querySelectorAll('.chart-btn');
+        console.log(`📊 생성된 차트 버튼 수: ${chartButtons.length}`);
+        chartButtons.forEach(btn => {
+            // 기존 이벤트 리스너 제거 (중복 방지)
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            // 새 이벤트 리스너 추가
+            newBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const symbol = newBtn.dataset.symbol;
+                const name = newBtn.dataset.name || symbol;
+                
+                console.log('🎯 차트 버튼 직접 클릭:', { symbol, name });
+                
+                if (symbol) {
+                    try {
+                        await renderChart(symbol, name);
+                    } catch (error) {
+                        console.error('차트 렌더링 오류:', error);
+                        alert(`차트를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+                    }
+                }
+            });
+        });
+        console.log('✅ 차트 버튼 이벤트 리스너 직접 바인딩 완료');
     }
 
     // 추천 종목 렌더링 (기존 함수 - 호환성 유지)
