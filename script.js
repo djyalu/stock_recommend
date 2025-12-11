@@ -2812,28 +2812,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 테마 토글 버튼 이벤트 (즉시 등록)
-    const themeToggleBtn = document.getElementById('themeToggle');
-    if (themeToggleBtn) {
+    function setupThemeToggle() {
+        const themeToggleBtn = document.getElementById('themeToggle');
+        if (!themeToggleBtn) {
+            console.error('❌ 테마 토글 버튼을 찾을 수 없습니다');
+            return;
+        }
+        
         // 초기 테마 설정
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
         updateThemeButton(savedTheme);
         
-        themeToggleBtn.addEventListener('click', (e) => {
+        // 기존 이벤트 리스너 제거 (중복 방지)
+        const newThemeBtn = themeToggleBtn.cloneNode(true);
+        themeToggleBtn.parentNode.replaceChild(newThemeBtn, themeToggleBtn);
+        
+        newThemeBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            console.log('🎨 테마 전환:', currentTheme, '→', newTheme);
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeButton(newTheme);
-            console.log('✅ 테마 전환 완료:', newTheme);
+            try {
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                console.log('🎨 테마 전환:', currentTheme, '→', newTheme);
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeButton(newTheme);
+                console.log('✅ 테마 전환 완료:', newTheme);
+            } catch (error) {
+                console.error('❌ 테마 전환 오류:', error);
+            }
         });
-        console.log('✅ 테마 토글 버튼 이벤트 리스너 등록 완료 (즉시)');
-    } else {
-        console.error('❌ 테마 토글 버튼을 찾을 수 없습니다');
+        console.log('✅ 테마 토글 버튼 이벤트 리스너 등록 완료');
     }
+    
+    // 테마 토글 설정 실행
+    setupThemeToggle();
 
     // 개별 종목 검색 버튼 이벤트
     if (searchStockBtn && stockSearchInput) {
