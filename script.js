@@ -5235,8 +5235,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const rsiValue = rsi[rsi.length - 1];
             const changePercent = ((closes[closes.length - 1] - closes[0]) / closes[0]) * 100;
             
-            document.getElementById('currentPrice').textContent = `$${currentPrice.toFixed(2)}`;
-            document.getElementById('ma20Value').textContent = ma20Value ? `$${ma20Value.toFixed(2)}` : '-';
+            // 한국 주식인지 확인
+            const isKoreanStock = symbol.includes('.KS');
+            
+            // 가격 포맷팅 함수
+            const formatPrice = (price) => {
+                if (typeof price !== 'number') return price;
+                if (isKoreanStock) {
+                    // 한국 주식: 원화, 소수점 없이, 천단위 구분
+                    return '₩' + Math.round(price).toLocaleString('ko-KR');
+                } else {
+                    // 미국 주식: 달러, 소수점 2자리, 천단위 구분
+                    return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            };
+            
+            document.getElementById('currentPrice').textContent = formatPrice(currentPrice);
+            document.getElementById('ma20Value').textContent = ma20Value ? formatPrice(ma20Value) : '-';
             document.getElementById('rsiValue').textContent = rsiValue ? rsiValue.toFixed(2) : '-';
             
             const changePercentEl = document.getElementById('changePercent');
