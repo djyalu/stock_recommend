@@ -4649,8 +4649,19 @@ document.addEventListener('DOMContentLoaded', () => {
             chartTitle.textContent = `📈 ${name} (${symbol}) - 차트 분석`;
         }
         
-        // 로딩 표시
-        chartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--text-muted);">차트 데이터 로딩 중...</div>';
+        // 로딩 표시 (캔버스는 유지하고 로딩 오버레이 추가)
+        const existingCanvas = chartContainer.querySelector('#chartCanvas');
+        if (!existingCanvas) {
+            chartContainer.innerHTML = '<canvas id="chartCanvas"></canvas>';
+        }
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'chartLoadingOverlay';
+        loadingOverlay.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); color: var(--text-muted); z-index: 10;';
+        loadingOverlay.textContent = '차트 데이터 로딩 중...';
+        chartContainer.style.position = 'relative';
+        if (!chartContainer.querySelector('#chartLoadingOverlay')) {
+            chartContainer.appendChild(loadingOverlay);
+        }
         console.log('⏳ 로딩 표시 완료');
         
         try {
