@@ -4536,6 +4536,34 @@ document.addEventListener('DOMContentLoaded', () => {
         return { signal, strength, description, details: signals };
     }
 
+    // 시뮬레이션 차트 데이터 생성 (프록시 실패 시 사용)
+    function generateSimulatedChartData(symbol, range) {
+        const days = range === '1mo' ? 30 : range === '3mo' ? 90 : range === '6mo' ? 180 : 365;
+        const data = [];
+        const basePrice = 100 + (symbol.charCodeAt(0) % 50); // 심볼 기반 기본 가격
+        
+        for (let i = days - 1; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            
+            // 랜덤 워크 시뮬레이션
+            const change = (Math.random() - 0.5) * 2; // -1 ~ 1
+            const price = basePrice + (days - i) * 0.1 + change * 2;
+            
+            data.push({
+                date: date,
+                timestamp: Math.floor(date.getTime() / 1000),
+                close: Math.max(10, price),
+                high: Math.max(10, price + Math.random() * 3),
+                low: Math.max(10, price - Math.random() * 3),
+                open: Math.max(10, price + (Math.random() - 0.5) * 2),
+                volume: Math.floor(Math.random() * 1000000) + 100000
+            });
+        }
+        
+        return data;
+    }
+
     // 차트 렌더링
     async function renderChart(symbol, name, range = '3mo') {
         const modal = document.getElementById('chartModal');
