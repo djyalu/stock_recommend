@@ -83,6 +83,22 @@
                     </p>
                 
                     <div class="action-section">
+                        <!-- 개별 종목 검색 -->
+                        <div class="search-controls">
+                            <div class="search-input-group">
+                                <input type="text" id="stockSearchInput" class="search-input" placeholder="종목 코드 입력 (예: AAPL, TSLA, 005930.KS)" />
+                                <button id="searchStockBtn" class="search-btn">
+                                    <span class="btn-icon">🔍</span>
+                                    <span class="btn-text">종목 분석</span>
+                                </button>
+                            </div>
+                            <p class="search-hint">💡 미국 주식: AAPL, TSLA 등 | 한국 주식: 005930.KS, 000660.KS 등</p>
+                        </div>
+                        
+                        <div class="divider-line">
+                            <span class="divider-text">또는</span>
+                        </div>
+                        
                         <div class="recommend-controls">
                             <div class="count-selector">
                                 <label for="recommendCount" class="count-label">추천 종목 수:</label>

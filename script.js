@@ -388,6 +388,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM 요소 가져오기 (존재하지 않을 수 있는 요소는 optional)
     const investorGrid = document.getElementById('investorGrid');
     const analyzeBtn = document.getElementById('analyzeBtn');
+    const searchStockBtn = document.getElementById('searchStockBtn');
+    const stockSearchInput = document.getElementById('stockSearchInput');
     const stockInput = document.getElementById('stockInput');
     const autocompleteList = document.getElementById('autocompleteList');
     const resultsSection = document.getElementById('resultsSection');
@@ -2398,6 +2400,416 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
         }
+    }
+
+    // 개별 종목 검색/분석 함수
+    async function searchAndAnalyzeStock(symbol) {
+        if (!symbol || !symbol.trim()) {
+            alert('종목 코드를 입력해주세요.');
+            return;
+        }
+        
+        symbol = symbol.trim().toUpperCase();
+        
+        // 한국 주식인 경우 .KS 추가 (없는 경우)
+        if (symbol.match(/^\d{6}$/)) {
+            symbol = symbol + '.KS';
+        }
+        
+        console.log(`🔍 개별 종목 분석 시작: ${symbol}`);
+        
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        const emptyState = document.getElementById('emptyState');
+        const resultsSection = document.getElementById('resultsSection');
+        
+        // UI 상태 변경
+        if (searchStockBtn) {
+            searchStockBtn.disabled = true;
+            if (searchStockBtn.querySelector('.btn-text')) {
+                searchStockBtn.querySelector('.btn-text').textContent = '분석 중...';
+            }
+        }
+        
+        if (progressSection) {
+            progressSection.classList.remove('hidden');
+        }
+        if (emptyState) {
+            emptyState.classList.add('hidden');
+        }
+        if (resultsSection) {
+            resultsSection.classList.add('hidden');
+        }
+        
+        try {
+            // 진행률 업데이트
+            if (progressText) {
+                progressText.textContent = `${symbol} 데이터 수집 중...`;
+            }
+            if (progressBar) {
+                progressBar.style.width = '30%';
+            }
+            if (progressPercent) {
+                progressPercent.textContent = '30%';
+            }
+            
+            // 종목 정보 찾기
+            const stockInfo = stockList.find(s => s.symbol === symbol) || 
+                            { symbol: symbol, name: symbol, market: symbol.includes('.KS') ? 'KR' : 'US' };
+            
+            // 주식 데이터 가져오기
+            if (progressText) {
+                progressText.textContent = `${symbol} 주가 데이터 가져오는 중...`;
+            }
+            if (progressBar) {
+                progressBar.style.width = '50%';
+            }
+            if (progressPercent) {
+                progressPercent.textContent = '50%';
+            }
+            
+            const stockData = await Promise.race([
+                fetchStockData(symbol),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), 15000)
+                )
+            ]).catch(err => {
+                console.error(`❌ ${symbol} 데이터 가져오기 실패:`, err.message);
+                throw new Error(`종목 데이터를 가져올 수 없습니다: ${err.message}`);
+            });
+            
+            if (!stockData) {
+                throw new Error('종목 데이터를 가져올 수 없습니다.');
+            }
+            
+            // 점수 계산
+            if (progressText) {
+                progressText.textContent = `${symbol} 분석 중...`;
+            }
+            if (progressBar) {
+                progressBar.style.width = '70%';
+            }
+            if (progressPercent) {
+                progressPercent.textContent = '70%';
+            }
+            
+            const { score, reasons, explanations } = calculateRecommendationScore(stockData);
+            
+            // 20일선 계산
+            if (progressText) {
+                progressText.textContent = `${symbol} 20일선 계산 중...`;
+            }
+            if (progressBar) {
+                progressBar.style.width = '85%';
+            }
+            if (progressPercent) {
+                progressPercent.textContent = '85%';
+            }
+            
+            let ma20 = null;
+            try {
+                const historicalData = await fetchHistoricalData(symbol, '1mo', '1d').catch(() => null);
+                if (historicalData && historicalData.length >= 20) {
+                    const closes = historicalData.map(d => d.close);
+                    const ma20Array = calculateMA(closes, 20);
+                    for (let i = ma20Array.length - 1; i >= 0; i--) {
+                        if (ma20Array[i] !== null && ma20Array[i] !== undefined) {
+                            ma20 = ma20Array[i];
+                            break;
+                        }
+                    }
+                }
+            } catch (maError) {
+                console.warn(`⚠️ ${symbol} 20일선 계산 실패:`, maError.message);
+            }
+            
+            // 추천 객체 생성
+            const recommendation = {
+                symbol: symbol,
+                name: stockInfo.name,
+                market: stockInfo.market,
+                price: stockData.price,
+                change: stockData.change,
+                changePercent: stockData.changePercent,
+                volume: stockData.volume,
+                score: score,
+                reasons: reasons,
+                explanations: explanations || [],
+                per: stockData.per,
+                pbr: stockData.pbr,
+                roe: stockData.roe,
+                revenueGrowth: stockData.revenueGrowth,
+                debtToEquity: stockData.debtToEquity,
+                isRealData: stockData.isRealData || false,
+                relatedNews: [],
+                ma20: ma20
+            };
+            
+            // 진행률 완료
+            if (progressBar) {
+                progressBar.style.width = '100%';
+            }
+            if (progressPercent) {
+                progressPercent.textContent = '100%';
+            }
+            
+            // 결과 렌더링 (개별 종목용)
+            renderSingleStockAnalysis(recommendation);
+            
+            // 결과 섹션 표시
+            if (resultsSection) {
+                resultsSection.classList.remove('hidden');
+            }
+            if (progressSection) {
+                progressSection.classList.add('hidden');
+            }
+            
+        } catch (error) {
+            console.error('❌ 개별 종목 분석 오류:', error);
+            alert(`종목 분석 중 오류가 발생했습니다:\n${error.message}`);
+            
+            // UI 복원
+            if (searchStockBtn) {
+                searchStockBtn.disabled = false;
+                if (searchStockBtn.querySelector('.btn-text')) {
+                    searchStockBtn.querySelector('.btn-text').textContent = '종목 분석';
+                }
+            }
+            if (progressSection) {
+                progressSection.classList.add('hidden');
+            }
+        } finally {
+            // UI 복원
+            if (searchStockBtn) {
+                searchStockBtn.disabled = false;
+                if (searchStockBtn.querySelector('.btn-text')) {
+                    searchStockBtn.querySelector('.btn-text').textContent = '종목 분석';
+                }
+            }
+        }
+    }
+    
+    // 개별 종목 분석 결과 렌더링
+    function renderSingleStockAnalysis(recommendation) {
+        const resultsSection = document.getElementById('resultsSection');
+        if (!resultsSection) return;
+        
+        const marketFlag = recommendation.market === 'KR' ? '🇰🇷' : '🇺🇸';
+        const marketText = recommendation.market === 'KR' ? '한국' : '미국';
+        
+        // 가격 포맷팅
+        const formatPrice = (price) => {
+            if (typeof price !== 'number') return price;
+            if (recommendation.market === 'KR') {
+                return '₩' + Math.round(price).toLocaleString('ko-KR');
+            } else {
+                return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        };
+        
+        const formatMA20 = (ma20) => {
+            if (ma20 === null || ma20 === undefined) return '';
+            if (recommendation.market === 'KR') {
+                return '₩' + Math.round(ma20).toLocaleString('ko-KR');
+            } else {
+                return '$' + ma20.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        };
+        
+        const changeClass = recommendation.changePercent >= 0 ? 'positive' : 'negative';
+        const changeSign = recommendation.changePercent >= 0 ? '+' : '';
+        
+        // 기존 renderNewsBasedRecommendations와 유사한 구조로 렌더링
+        let html = `
+            <div class="single-stock-section">
+                <div class="section-header-modern">
+                    <h2 class="section-title">📊 종목 분석 결과</h2>
+                    <p class="section-description">${recommendation.name} (${recommendation.symbol}) 상세 분석</p>
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-card ${recommendation.score >= 60 ? 'high-score' : recommendation.score >= 30 ? 'medium-score' : 'low-score'}">
+                        <div class="detail-header">
+                            <div class="detail-title-section">
+                                <span class="detail-flag">${marketFlag}</span>
+                                <span class="detail-market-badge ${recommendation.market === 'KR' ? 'market-kr' : 'market-us'}">${marketText}</span>
+                                <div class="detail-name-group">
+                                    <h3 class="detail-name">${recommendation.name}</h3>
+                                    <span class="detail-symbol">${recommendation.symbol}</span>
+                                </div>
+                            </div>
+                            <div class="detail-score-badge score-${recommendation.score >= 60 ? 'high' : recommendation.score >= 30 ? 'medium' : 'low'}">
+                                ${recommendation.score.toFixed(1)}점
+                            </div>
+                        </div>
+
+                        <div class="detail-content">
+                            <!-- 주가 정보 -->
+                            <div class="detail-section">
+                                <h4 class="detail-section-title">💰 주가 정보</h4>
+                                <div class="detail-metrics-grid">
+                                    <div class="detail-metric">
+                                        <span class="metric-label">현재가</span>
+                                        <span class="metric-value">${formatPrice(recommendation.price)}</span>
+                                    </div>
+                                    <div class="detail-metric">
+                                        <span class="metric-label">변동률</span>
+                                        <span class="metric-value ${changeClass}">${changeSign}${recommendation.changePercent.toFixed(2)}%</span>
+                                    </div>
+                                    ${recommendation.volume ? `
+                                    <div class="detail-metric">
+                                        <span class="metric-label">거래량</span>
+                                        <span class="metric-value">${recommendation.volume.toLocaleString()}</span>
+                                    </div>
+                                    ` : ''}
+                                    ${recommendation.ma20 !== null && recommendation.ma20 !== undefined ? `
+                                    <div class="detail-metric">
+                                        <span class="metric-label">20일선</span>
+                                        <span class="metric-value">${formatMA20(recommendation.ma20)}</span>
+                                    </div>
+                                    <div class="detail-metric">
+                                        <span class="metric-label">매매 신호</span>
+                                        <span class="metric-value ${recommendation.price < recommendation.ma20 ? 'buy-signal' : 'wait-signal'}" style="font-weight: 600;">
+                                            ${recommendation.price < recommendation.ma20 ? 'BUY' : 'WAIT'}
+                                        </span>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+        `;
+        
+        // 재무 지표 섹션 (기존 코드와 동일)
+        html += `
+                            <!-- 재무 지표 -->
+                            <div class="detail-section">
+                                <h4 class="detail-section-title">📈 재무 지표</h4>
+                                <div class="detail-metrics-grid">
+        `;
+        
+        if (recommendation.per !== null && recommendation.per !== undefined) {
+            html += `
+                                    <div class="detail-metric">
+                                        <span class="metric-label">PER</span>
+                                        <span class="metric-value">${recommendation.per.toFixed(2)}</span>
+                                    </div>
+            `;
+        }
+        
+        if (recommendation.pbr !== null && recommendation.pbr !== undefined) {
+            html += `
+                                    <div class="detail-metric">
+                                        <span class="metric-label">PBR</span>
+                                        <span class="metric-value">${recommendation.pbr.toFixed(2)}</span>
+                                    </div>
+            `;
+        }
+        
+        if (recommendation.roe !== null && recommendation.roe !== undefined) {
+            html += `
+                                    <div class="detail-metric">
+                                        <span class="metric-label">ROE</span>
+                                        <span class="metric-value">${recommendation.roe.toFixed(2)}%</span>
+                                    </div>
+            `;
+        }
+        
+        if (recommendation.revenueGrowth !== null && recommendation.revenueGrowth !== undefined) {
+            html += `
+                                    <div class="detail-metric">
+                                        <span class="metric-label">매출 성장률</span>
+                                        <span class="metric-value ${recommendation.revenueGrowth >= 0 ? 'positive' : 'negative'}">${recommendation.revenueGrowth >= 0 ? '+' : ''}${recommendation.revenueGrowth.toFixed(2)}%</span>
+                                    </div>
+            `;
+        }
+        
+        if (recommendation.debtToEquity !== null && recommendation.debtToEquity !== undefined) {
+            html += `
+                                    <div class="detail-metric">
+                                        <span class="metric-label">부채비율</span>
+                                        <span class="metric-value">${recommendation.debtToEquity.toFixed(2)}%</span>
+                                    </div>
+            `;
+        }
+        
+        html += `
+                                </div>
+                            </div>
+        `;
+        
+        // 추천 근거 섹션
+        if (recommendation.reasons && recommendation.reasons.length > 0) {
+            html += `
+                            <!-- 추천 근거 -->
+                            <div class="detail-section">
+                                <h4 class="detail-section-title">💡 추천 근거</h4>
+                                <div class="reasons-list">
+            `;
+            
+            recommendation.reasons.forEach(reason => {
+                html += `
+                                    <div class="reason-item ${reason.type}">
+                                        <span class="reason-icon">${reason.type === 'positive' ? '✅' : reason.type === 'negative' ? '⚠️' : 'ℹ️'}</span>
+                                        <span class="reason-text">${reason.text}</span>
+                                    </div>
+                `;
+            });
+            
+            html += `
+                                </div>
+                            </div>
+            `;
+        }
+        
+        // 차트 분석 버튼
+        html += `
+                            <div class="detail-footer">
+                                <button class="chart-btn" data-symbol="${recommendation.symbol}" data-name="${recommendation.name}">
+                                    📈 차트 분석
+                                </button>
+                                <span class="data-badge ${recommendation.isRealData ? 'data-badge-real' : 'data-badge-sim'}">
+                                    ${recommendation.isRealData ? '✅ 실제 데이터' : '🔮 시뮬레이션'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        resultsSection.innerHTML = html;
+        
+        // 차트 버튼 이벤트 리스너 재등록
+        initChartButtonHandler();
+    }
+    
+    // 개별 종목 검색 버튼 이벤트
+    if (searchStockBtn && stockSearchInput) {
+        // 검색 버튼 클릭
+        searchStockBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const symbol = stockSearchInput.value.trim();
+            if (!symbol) {
+                alert('종목 코드를 입력해주세요.');
+                stockSearchInput.focus();
+                return;
+            }
+            await searchAndAnalyzeStock(symbol);
+        });
+        
+        // Enter 키 입력
+        stockSearchInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const symbol = stockSearchInput.value.trim();
+                if (!symbol) {
+                    alert('종목 코드를 입력해주세요.');
+                    return;
+                }
+                await searchAndAnalyzeStock(symbol);
+            }
+        });
     }
 
     // 버튼 클릭 이벤트 변경
