@@ -437,14 +437,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // recommendCount 변경 시 배지 업데이트 (DOM이 준비된 후 실행)
+    let badgeUpdaterInitialized = false;
     function initBadgeUpdater() {
         const recommendCountSelect = document.getElementById('recommendCount');
         if (recommendCountSelect) {
-            // 이벤트 리스너 추가
-            recommendCountSelect.addEventListener('change', updateBadgeTexts);
+            // 중복 초기화 방지
+            if (!badgeUpdaterInitialized) {
+                // change 이벤트 리스너 추가
+                recommendCountSelect.addEventListener('change', function(e) {
+                    console.log('recommendCount 변경됨:', e.target.value);
+                    updateBadgeTexts();
+                });
+                // input 이벤트도 추가 (일부 브라우저에서 필요)
+                recommendCountSelect.addEventListener('input', function(e) {
+                    console.log('recommendCount input:', e.target.value);
+                    updateBadgeTexts();
+                });
+                badgeUpdaterInitialized = true;
+                console.log('배지 업데이터 초기화 완료');
+            }
             // 초기 로드 시에도 업데이트
             updateBadgeTexts();
-            console.log('배지 업데이터 초기화 완료');
         } else {
             // DOM이 아직 준비되지 않았으면 재시도
             setTimeout(initBadgeUpdater, 100);
