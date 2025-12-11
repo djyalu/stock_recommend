@@ -2411,12 +2411,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         symbol = symbol.trim().toUpperCase();
         
-        // 한국 주식인 경우 .KS 추가 (없는 경우)
-        if (symbol.match(/^\d{6}$/)) {
-            symbol = symbol + '.KS';
+        // 선택된 시장 타입 확인
+        const marketTypeInput = document.querySelector('input[name="marketType"]:checked');
+        const marketType = marketTypeInput ? marketTypeInput.value : 'US';
+        
+        // 한국 주식인 경우 .KS 추가
+        if (marketType === 'KR') {
+            // .KS가 없으면 추가
+            if (!symbol.includes('.KS')) {
+                symbol = symbol + '.KS';
+            }
+        } else {
+            // 미국 주식인 경우 .KS 제거
+            symbol = symbol.replace('.KS', '');
         }
         
-        console.log(`🔍 개별 종목 분석 시작: ${symbol}`);
+        console.log(`🔍 개별 종목 분석 시작: ${symbol} (시장: ${marketType})`);
         
         const progressSection = document.getElementById('progressSection');
         const progressBar = document.getElementById('progressBar');
@@ -2456,8 +2466,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // 종목 정보 찾기
+            const marketType = symbol.includes('.KS') ? 'KR' : 'US';
             const stockInfo = stockList.find(s => s.symbol === symbol) || 
-                            { symbol: symbol, name: symbol, market: symbol.includes('.KS') ? 'KR' : 'US' };
+                            { symbol: symbol, name: symbol, market: marketType };
             
             // 주식 데이터 가져오기
             if (progressText) {
