@@ -4881,12 +4881,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             
-            window.chartInstance = new Chart(chartCanvas, {
-                type: 'line',
-                data: {
-                    labels: dates.map(d => d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })),
-                    datasets: datasets
-                },
+            try {
+                window.chartInstance = new Chart(chartCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: dates.map(d => d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })),
+                        datasets: datasets
+                    },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
