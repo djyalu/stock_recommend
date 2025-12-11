@@ -4748,9 +4748,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('차트 캔버스를 생성할 수 없습니다');
             }
             
+            // Chart.js가 로드되었는지 확인
+            if (typeof Chart === 'undefined') {
+                throw new Error('Chart.js 라이브러리가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+            }
+            
             // 전역 chartInstance 변수에 접근
             if (window.chartInstance) {
-                window.chartInstance.destroy();
+                try {
+                    window.chartInstance.destroy();
+                } catch (e) {
+                    console.warn('기존 차트 인스턴스 제거 중 오류:', e);
+                }
+                window.chartInstance = null;
             }
             
             // 차트 타입 확인
