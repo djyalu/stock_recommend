@@ -413,6 +413,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let isRealData = false;
     let currentFilter = 'all';
     
+    // 배지 텍스트 업데이트 함수
+    function updateBadgeTexts() {
+        const recommendCountSelect = document.getElementById('recommendCount');
+        const usBadgeText = document.getElementById('usBadgeText');
+        const krBadgeText = document.getElementById('krBadgeText');
+        
+        if (!recommendCountSelect || !usBadgeText || !krBadgeText) return;
+        
+        const recommendCount = parseInt(recommendCountSelect.value) || 10;
+        // 추천 종목 수의 절반씩 배분 (반올림)
+        const halfCount = Math.round(recommendCount / 2);
+        const usCount = halfCount;
+        const krCount = recommendCount - halfCount;
+        
+        usBadgeText.textContent = `미국 ${usCount}개`;
+        krBadgeText.textContent = `한국 ${krCount}개`;
+    }
+    
+    // recommendCount 변경 시 배지 업데이트
+    const recommendCountSelect = document.getElementById('recommendCount');
+    if (recommendCountSelect) {
+        recommendCountSelect.addEventListener('change', updateBadgeTexts);
+        // 초기 로드 시에도 업데이트
+        updateBadgeTexts();
+    }
+    
     // ========== History Functions ==========
     const HISTORY_KEY = 'stock_guru_history';
     const MAX_HISTORY = 5;
