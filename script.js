@@ -5029,7 +5029,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 이동평균선 및 지표 체크박스 변경
     document.addEventListener('change', async (e) => {
-        if (currentChartSymbol && (
+        if (window.currentChartSymbol && (
             e.target.matches('input[data-ma]') || 
             e.target.id === 'showMACD' || 
             e.target.id === 'showBollinger'
