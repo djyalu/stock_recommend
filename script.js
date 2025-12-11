@@ -4593,7 +4593,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // 모달 표시
         console.log('📱 모달 표시 중...');
         modal.classList.remove('hidden');
-        console.log('✅ 모달 표시 완료, hidden 클래스 제거됨');
+        modal.style.display = 'flex'; // 강제로 display 설정
+        modal.style.zIndex = '10000'; // z-index 확실히 설정
+        console.log('✅ 모달 표시 완료, hidden 클래스 제거됨, display:', modal.style.display);
+        
+        // 모달이 실제로 보이는지 확인
+        setTimeout(() => {
+            const isVisible = modal.offsetParent !== null && !modal.classList.contains('hidden');
+            const computedStyle = window.getComputedStyle(modal);
+            console.log('👁️ 모달 가시성 확인:', { 
+                isVisible, 
+                hasHidden: modal.classList.contains('hidden'),
+                display: computedStyle.display,
+                zIndex: computedStyle.zIndex,
+                offsetParent: modal.offsetParent !== null
+            });
+            if (computedStyle.display === 'none') {
+                console.warn('⚠️ 모달이 display:none 상태입니다! 강제로 flex로 변경');
+                modal.style.display = 'flex';
+            }
+        }, 100);
         
         if (chartTitle) {
             chartTitle.textContent = `📈 ${name} (${symbol}) - 차트 분석`;
@@ -4966,37 +4985,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 차트 버튼 클릭 이벤트 (이벤트 위임 사용)
-    document.addEventListener('click', async (e) => {
-        const chartBtn = e.target.closest('.chart-btn');
-        if (chartBtn) {
-            console.log('🎯 차트 버튼 클릭 감지!', chartBtn);
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const symbol = chartBtn.dataset.symbol;
-            const name = chartBtn.dataset.name || symbol;
-            
-            console.log('📊 차트 버튼 데이터:', { symbol, name, btn: chartBtn });
-            
-            if (!symbol) {
-                console.error('❌ 차트 버튼에 symbol이 없습니다', chartBtn);
-                alert('차트 버튼에 종목 정보가 없습니다.');
-                return;
-            }
-            
-            try {
-                console.log('🚀 renderChart 호출 시작...');
-                await renderChart(symbol, name);
-                console.log('✅ renderChart 완료');
-            } catch (error) {
-                console.error('❌ 차트 렌더링 오류:', error);
-                alert(`차트를 불러오는 중 오류가 발생했습니다: ${error.message}`);
-            }
-        }
-    });
+    // 차트 버튼 클릭 이벤트 (이벤트 위임 사용 - 최우선 처리)
+    function initChartButtonHandler() {
+        // 기존 리스너 제거 (중복 방지)
+        document.removeEventListener('click', chartButtonClickHandler);
+        
+        // 새 리스너 등록
+        document.addEventListener('click', chartButtonClickHandler, true); // capture phase에서 처리
+        
+        console.log('✅ 차트 버튼 이벤트 리스너 등록 완료');
+    }
     
-    console.log('✅ 차트 버튼 이벤트 리스너 등록 완료');
+    // 차트 버튼 클릭 핸들러
+    async function chartButtonClickHandler(e) {
+        // 차트 버튼 또는 그 내부 요소 클릭 확인
+        const chartBtn = e.target.closest('.chart-btn');
+        if (!chartBtn) return;
+        
+        console.log('🎯 차트 버튼 클릭 감지!', chartBtn);
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        const symbol = chartBtn.dataset.symbol;
+        const name = chartBtn.dataset.name || symbol;
+        
+        console.log('📊 차트 버튼 데이터:', { symbol, name, btn: chartBtn });
+        
+        if (!symbol) {
+            console.error('❌ 차트 버튼에 symbol이 없습니다', chartBtn);
+            alert('차트 버튼에 종목 정보가 없습니다.');
+            return;
+        }
+        
+        try {
+            console.log('🚀 renderChart 호출 시작...');
+            await renderChart(symbol, name);
+            console.log('✅ renderChart 완료');
+        } catch (error) {
+            console.error('❌ 차트 렌더링 오류:', error);
+            alert(`차트를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+        }
+    }
+    
+    // 초기화
+    initChartButtonHandler();
+    
+    // 동적으로 생성된 버튼을 위해 결과 렌더링 후에도 다시 등록
+    const originalRenderNewsBasedRecommendations = renderNewsBasedRecommendations;
+    if (typeof renderNewsBasedRecommendations === 'function') {
+        // 결과 렌더링 후 이벤트 리스너 재등록을 위해 감시
+        // (renderNewsBasedRecommendations 함수 내부에서 처리하거나 MutationObserver 사용)
+    }
 });
 
 
