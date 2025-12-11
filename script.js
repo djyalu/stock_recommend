@@ -5007,17 +5007,19 @@ document.addEventListener('DOMContentLoaded', () => {
                                 color: 'var(--border)'
                             }
                         },
-                        y1: showMACD ? {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            ticks: {
-                                color: 'var(--text-muted)'
-                            },
-                            grid: {
-                                drawOnChartArea: false
+                        ...(showMACD ? {
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                ticks: {
+                                    color: 'var(--text-muted)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
                             }
-                        } : undefined
+                        } : {})
                     },
                     interaction: {
                         mode: 'index',
