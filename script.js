@@ -1403,32 +1403,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 네이버 금융에서 한국 주식 뉴스 가져오기 (주식 정보 기반)
+    // 네이버 금융에서 한국 주식 뉴스 가져오기
     async function fetchNaverFinanceNews() {
         try {
-            console.log('📰 네이버 금융 주식 정보 기반 뉴스 수집 시작...');
+            console.log('📰 네이버 금융 뉴스 수집 시작...');
             const allNews = [];
             
-            // 주요 한국 주식 종목 코드들
-            const koreanStocks = [
-                { code: '005930', name: '삼성전자' },
-                { code: '000660', name: 'SK하이닉스' },
-                { code: '035420', name: 'NAVER' },
-                { code: '035720', name: '카카오' },
-                { code: '051910', name: 'LG화학' },
-                { code: '006400', name: '삼성SDI' },
-                { code: '005380', name: '현대차' },
-                { code: '096770', name: 'SK이노베이션' },
-                { code: '003670', name: '포스코' },
-                { code: '017670', name: 'SK텔레콤' }
+            // 네이버 금융 뉴스 페이지들 (종목뉴스, 시황뉴스, 산업뉴스)
+            const naverNewsUrls = [
+                { url: 'https://finance.naver.com/news/news_list.naver?mode=LSS2D&section_id=101&section_id2=258', type: '종목뉴스' },
+                { url: 'https://finance.naver.com/news/news_list.naver?mode=LSS2D&section_id=101&section_id2=259', type: '시황뉴스' },
+                { url: 'https://finance.naver.com/news/news_list.naver?mode=LSS2D&section_id=101&section_id2=260', type: '산업뉴스' }
             ];
             
-            // 각 종목의 최신 뉴스 가져오기
-            for (const stock of koreanStocks.slice(0, 10)) {
+            for (const newsSource of naverNewsUrls) {
                 try {
-                    // 네이버 금융 종목 페이지에서 뉴스 가져오기
-                    const stockPageUrl = `https://finance.naver.com/item/news.naver?code=${stock.code}`;
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(stockPageUrl)}`;
+                    console.log(`📰 ${newsSource.type} 수집 중...`);
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsSource.url)}`;
                     const response = await fetch(proxyUrl);
                     const data = await response.json();
                     
@@ -1436,49 +1427,90 @@ document.addEventListener('DOMContentLoaded', () => {
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(data.contents, 'text/html');
                         
-                        // 뉴스 리스트 찾기
-                        const newsItems = doc.querySelectorAll('.newsList li, .articleSubject, tr[onclick*="news_read"]');
+                        // 다양한 선택자로 뉴스 찾기
+                        let newsItems = doc.querySelectorAll('.newsList li, .articleSubject, tr[onclick*="news_read"], .articleList li, table.newsList tr');
                         
-                        newsItems.forEach((item, index) => {
-                            if (index >= 5) return; // 종목당 최대 5개
-                            
-                            const link = item.querySelector('a');
-                            if (link) {
+                        // 뉴스를 찾지 못한 경우 다른 선택자 시도
+                        if (newsItems.length === 0) {
+                            // 링크로 직접 찾기
+                            const links = doc.querySelectorAll('a[href*="/news/news_read.naver"], a[href*="news.naver"]');
+                            links.forEach((link, index) => {
+                                if (index >= 20) return;
+                                
                                 const headline = link.textContent.trim();
-                                const href = link.getAttribute('href');
-                                const fullUrl = href.startsWith('http') ? href : `https://finance.naver.com${href}`;
-                                
-                                // 날짜 찾기
-                                const dateEl = item.querySelector('.date, .wdate, td.date');
-                                const dateText = dateEl ? dateEl.textContent.trim() : '';
-                                
-                                if (headline && !allNews.find(n => n.headline === headline)) {
-                                    allNews.push({
-                                        headline: `${stock.name}: ${headline}`,
-                                        summary: '',
-                                        source: '네이버 금융',
-                                        url: fullUrl,
-                                        publishTime: parseNaverDate(dateText) || Date.now() / 1000
-                                    });
+                                if (headline && headline.length > 10) {
+                                    const href = link.getAttribute('href');
+                                    const fullUrl = href.startsWith('http') ? href : `https://finance.naver.com${href}`;
+                                    
+                                    // 중복 체크
+                                    if (!allNews.find(n => n.headline === headline || n.url === fullUrl)) {
+                                        allNews.push({
+                                            headline: headline,
+                                            summary: '',
+                                            source: `네이버 금융 ${newsSource.type}`,
+                                            url: fullUrl,
+                                            publishTime: Date.now() / 1000
+                                        });
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        } else {
+                            // 찾은 뉴스 아이템 처리
+                            newsItems.forEach((item, index) => {
+                                if (index >= 15) return; // 소스당 최대 15개
+                                
+                                const link = item.querySelector('a');
+                                if (link) {
+                                    const headline = link.textContent.trim();
+                                    if (!headline || headline.length < 5) return;
+                                    
+                                    const href = link.getAttribute('href');
+                                    const fullUrl = href.startsWith('http') ? href : `https://finance.naver.com${href}`;
+                                    
+                                    // 날짜 찾기
+                                    const dateEl = item.querySelector('.date, .wdate, td.date, .articleInfo .date');
+                                    const dateText = dateEl ? dateEl.textContent.trim() : '';
+                                    
+                                    // 요약 찾기
+                                    const summaryEl = item.querySelector('.summary, .articleSummary, .articleInfo');
+                                    const summary = summaryEl ? summaryEl.textContent.trim().substring(0, 100) : '';
+                                    
+                                    // 중복 체크
+                                    if (!allNews.find(n => n.headline === headline || n.url === fullUrl)) {
+                                        allNews.push({
+                                            headline: headline,
+                                            summary: summary,
+                                            source: `네이버 금융 ${newsSource.type}`,
+                                            url: fullUrl,
+                                            publishTime: parseNaverDate(dateText) || Date.now() / 1000
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                        
+                        console.log(`✅ ${newsSource.type} 수집 완료: ${allNews.length}개 (누적)`);
+                    } else {
+                        console.warn(`⚠️ ${newsSource.type} 페이지 응답 없음`);
                     }
                 } catch (err) {
-                    console.warn(`종목 뉴스 수집 실패 (${stock.name}):`, err);
+                    console.warn(`❌ ${newsSource.type} 수집 실패:`, err);
                 }
                 
                 // API 제한 방지
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
             
             // 최신순 정렬
             allNews.sort((a, b) => b.publishTime - a.publishTime);
             
-            console.log(`✅ 네이버 금융 뉴스 ${allNews.length}개 수집 완료`);
+            console.log(`✅ 네이버 금융 뉴스 총 ${allNews.length}개 수집 완료`);
+            if (allNews.length === 0) {
+                console.error('❌ 네이버 뉴스 수집 실패 - 빈 배열 반환');
+            }
             return allNews.slice(0, 30); // 상위 30개
         } catch (error) {
-            console.error('네이버 금융 뉴스 수집 오류:', error);
+            console.error('❌ 네이버 금융 뉴스 수집 오류:', error);
             return [];
         }
     }
