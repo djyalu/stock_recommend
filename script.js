@@ -4899,6 +4899,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             
+            // MACD 추가 (별도 Y축 사용)
+            if (showMACD && macd && macd.macdLine && macd.signalLine) {
+                // MACD 라인
+                datasets.push({
+                    label: 'MACD',
+                    data: macd.macdLine,
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0,
+                    yAxisID: 'y1',
+                    tension: 0.1
+                });
+                // Signal 라인
+                datasets.push({
+                    label: 'Signal',
+                    data: macd.signalLine,
+                    borderColor: 'rgb(236, 72, 153)',
+                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0,
+                    yAxisID: 'y1',
+                    tension: 0.1
+                });
+                // Histogram (MACD - Signal)
+                if (macd.histogram) {
+                    datasets.push({
+                        label: 'Histogram',
+                        data: macd.histogram,
+                        type: 'bar',
+                        backgroundColor: macd.histogram.map((val, idx) => 
+                            val >= 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'
+                        ),
+                        borderColor: macd.histogram.map((val, idx) => 
+                            val >= 0 ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'
+                        ),
+                        borderWidth: 1,
+                        yAxisID: 'y1'
+                    });
+                }
+            }
+            
             try {
                 window.chartInstance = new Chart(chartCanvas, {
                     type: 'line',
@@ -4984,50 +5028,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (chartError) {
                 console.error('❌ Chart.js 생성 오류:', chartError);
                 throw new Error(`차트 생성 실패: ${chartError.message}`);
-            }
-            
-            // MACD 추가 (별도 Y축 사용)
-            if (showMACD && macd && macd.macdLine && macd.signalLine) {
-                // MACD 라인
-                datasets.push({
-                    label: 'MACD',
-                    data: macd.macdLine,
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    fill: false,
-                    pointRadius: 0,
-                    yAxisID: 'y1',
-                    tension: 0.1
-                });
-                // Signal 라인
-                datasets.push({
-                    label: 'Signal',
-                    data: macd.signalLine,
-                    borderColor: 'rgb(236, 72, 153)',
-                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
-                    borderWidth: 2,
-                    fill: false,
-                    pointRadius: 0,
-                    yAxisID: 'y1',
-                    tension: 0.1
-                });
-                // Histogram (MACD - Signal)
-                if (macd.histogram) {
-                    datasets.push({
-                        label: 'Histogram',
-                        data: macd.histogram,
-                        type: 'bar',
-                        backgroundColor: macd.histogram.map((val, idx) => 
-                            val >= 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'
-                        ),
-                        borderColor: macd.histogram.map((val, idx) => 
-                            val >= 0 ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'
-                        ),
-                        borderWidth: 1,
-                        yAxisID: 'y1'
-                    });
-                }
             }
             
             window.currentChartSymbol = symbol;
