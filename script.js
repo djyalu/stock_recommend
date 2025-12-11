@@ -425,15 +425,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const recommendCount = parseInt(recommendCountSelect.value) || 10;
-        // 추천 종목 수의 절반씩 배분 (반올림)
-        const halfCount = Math.round(recommendCount / 2);
-        const usCount = halfCount;
-        const krCount = recommendCount - halfCount;
+        // 선택한 추천 종목 수를 미국과 한국에 각각 표시
+        usBadgeText.textContent = `미국 ${recommendCount}개`;
+        krBadgeText.textContent = `한국 ${recommendCount}개`;
         
-        usBadgeText.textContent = `미국 ${usCount}개`;
-        krBadgeText.textContent = `한국 ${krCount}개`;
-        
-        console.log(`배지 업데이트: 미국 ${usCount}개, 한국 ${krCount}개 (총 ${recommendCount}개)`);
+        console.log(`배지 업데이트: 미국 ${recommendCount}개, 한국 ${recommendCount}개`);
     }
     
     // recommendCount 변경 시 배지 업데이트 (DOM이 준비된 후 실행)
