@@ -38,6 +38,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -184,6 +187,74 @@
             <p class="footer-copyright">© 2024 Stock Recommend. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- Chart Modal -->
+    <div id="chartModal" class="modal hidden">
+        <div class="modal-content chart-modal">
+            <div class="modal-header">
+                <h3 id="chartTitle">📈 차트 분석</h3>
+                <button id="closeChartModal" class="close-btn">&times;</button>
+            </div>
+            <div class="chart-controls">
+                <div class="chart-control-group">
+                    <label for="chartType">차트 타입:</label>
+                    <select id="chartType" class="chart-select">
+                        <option value="line" selected>라인</option>
+                        <option value="candlestick">캔들스틱</option>
+                    </select>
+                </div>
+                <div class="chart-control-group">
+                    <label for="chartRange">기간:</label>
+                    <select id="chartRange" class="chart-select">
+                        <option value="1mo">1개월</option>
+                        <option value="3mo" selected>3개월</option>
+                        <option value="6mo">6개월</option>
+                        <option value="1y">1년</option>
+                    </select>
+                </div>
+                <div class="chart-control-group">
+                    <label>이동평균선:</label>
+                    <div class="ma-controls">
+                        <label class="ma-checkbox"><input type="checkbox" data-ma="5" checked> 5일선</label>
+                        <label class="ma-checkbox"><input type="checkbox" data-ma="20" checked> 20일선</label>
+                        <label class="ma-checkbox"><input type="checkbox" data-ma="60"> 60일선</label>
+                    </div>
+                </div>
+                <div class="chart-control-group">
+                    <label>지표:</label>
+                    <div class="ma-controls">
+                        <label class="ma-checkbox"><input type="checkbox" id="showMACD"> MACD</label>
+                        <label class="ma-checkbox"><input type="checkbox" id="showBollinger"> 볼린저 밴드</label>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container-wrapper">
+                <canvas id="chartCanvas"></canvas>
+            </div>
+            <div class="chart-indicators">
+                <div class="indicator-item">
+                    <span class="indicator-label">현재가:</span>
+                    <span id="currentPrice" class="indicator-value">-</span>
+                </div>
+                <div class="indicator-item">
+                    <span class="indicator-label">20일선:</span>
+                    <span id="ma20Value" class="indicator-value">-</span>
+                </div>
+                <div class="indicator-item">
+                    <span class="indicator-label">RSI(14):</span>
+                    <span id="rsiValue" class="indicator-value">-</span>
+                </div>
+                <div class="indicator-item">
+                    <span class="indicator-label">변동률:</span>
+                    <span id="changePercent" class="indicator-value">-</span>
+                </div>
+                <div class="indicator-item">
+                    <span class="indicator-label">매매 신호:</span>
+                    <span id="tradingSignal" class="indicator-value">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

@@ -2146,11 +2146,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         ` : ''}
 
-                        <!-- 데이터 소스 -->
+                        <!-- 데이터 소스 및 차트 버튼 -->
                         <div class="detail-footer">
                             <span class="data-badge ${rec.isRealData ? 'data-badge-real' : 'data-badge-sim'}">
                                 ${rec.isRealData ? '✅ 실제 데이터' : '🔮 시뮬레이션'}
                             </span>
+                            <button class="chart-btn" data-symbol="${rec.symbol}" data-name="${rec.name}">
+                                📈 차트 분석
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -4271,6 +4274,602 @@ document.addEventListener('DOMContentLoaded', () => {
         showCompare: showCompareModal,
         analysisResults
     };
+
+    // ========== Chart Analysis Feature ==========
+    let chartInstance = null;
+    let currentChartSymbol = null;
+
+    // 과거 주가 데이터 가져오기
+    async function fetchHistoricalData(ticker, range = '3mo', interval = '1d') {
+        try {
+            const targetUrl = `${BASE_URL}/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
+            const data = await fetchWithProxy(targetUrl);
+
+            if (data.chart?.result?.[0]) {
+                const result = data.chart.result[0];
+                const timestamps = result.timestamp || [];
+                const quote = result.indicators.quote[0];
+                
+                // 유효한 데이터만 필터링
+                const validData = [];
+                for (let i = 0; i < timestamps.length; i++) {
+                    if (quote.close[i] !== null && quote.close[i] !== undefined) {
+                        validData.push({
+                            date: new Date(timestamps[i] * 1000),
+                            timestamp: timestamps[i],
+                            close: quote.close[i],
+                            high: quote.high[i],
+                            low: quote.low[i],
+                            open: quote.open[i],
+                            volume: quote.volume[i] || 0
+                        });
+                    }
+                }
+                
+                return validData;
+            }
+            return null;
+        } catch (error) {
+            console.error('과거 데이터 가져오기 실패:', error);
+            return null;
+        }
+    }
+
+    // 이동평균선 계산
+    function calculateMA(prices, period) {
+        const ma = [];
+        for (let i = 0; i < prices.length; i++) {
+            if (i < period - 1) {
+                ma.push(null);
+            } else {
+                const sum = prices.slice(i - period + 1, i + 1).reduce((a, b) => a + (b || 0), 0);
+                ma.push(sum / period);
+            }
+        }
+        return ma;
+    }
+
+    // RSI 계산
+    function calculateRSI(prices, period = 14) {
+        const rsi = [];
+        const changes = [];
+        
+        // 가격 변화 계산
+        for (let i = 1; i < prices.length; i++) {
+            if (prices[i] && prices[i - 1]) {
+                changes.push(prices[i] - prices[i - 1]);
+            } else {
+                changes.push(0);
+            }
+        }
+        
+        for (let i = 0; i < prices.length; i++) {
+            if (i < period) {
+                rsi.push(null);
+            } else {
+                const recentChanges = changes.slice(i - period, i);
+                const gains = recentChanges.filter(c => c > 0).reduce((a, b) => a + b, 0) / period;
+                const losses = Math.abs(recentChanges.filter(c => c < 0).reduce((a, b) => a + b, 0)) / period;
+                
+                if (losses === 0) {
+                    rsi.push(100);
+                } else {
+                    const rs = gains / losses;
+                    rsi.push(100 - (100 / (1 + rs)));
+                }
+            }
+        }
+        return rsi;
+    }
+
+    // MACD 계산
+    function calculateMACD(prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {
+        const emaFast = calculateEMA(prices, fastPeriod);
+        const emaSlow = calculateEMA(prices, slowPeriod);
+        
+        const macdLine = [];
+        for (let i = 0; i < prices.length; i++) {
+            if (emaFast[i] !== null && emaSlow[i] !== null) {
+                macdLine.push(emaFast[i] - emaSlow[i]);
+            } else {
+                macdLine.push(null);
+            }
+        }
+        
+        // signalLine 계산을 위해 null이 아닌 값들만 사용
+        const validMacdValues = macdLine.filter(v => v !== null);
+        if (validMacdValues.length < signalPeriod) {
+            return { macdLine, signalLine: macdLine.map(() => null), histogram: macdLine.map(() => null) };
+        }
+        
+        const signalLineFull = calculateEMA(macdLine, signalPeriod);
+        const histogram = [];
+        for (let i = 0; i < macdLine.length; i++) {
+            if (macdLine[i] !== null && signalLineFull[i] !== null) {
+                histogram.push(macdLine[i] - signalLineFull[i]);
+            } else {
+                histogram.push(null);
+            }
+        }
+        
+        return { macdLine, signalLine: signalLineFull, histogram };
+    }
+
+    // EMA 계산 (지수 이동평균)
+    function calculateEMA(prices, period) {
+        const ema = [];
+        const multiplier = 2 / (period + 1);
+        
+        // 첫 번째 값은 SMA로 시작
+        let sum = 0;
+        let validCount = 0;
+        for (let i = 0; i < period && i < prices.length; i++) {
+            if (prices[i] !== null && prices[i] !== undefined) {
+                sum += prices[i];
+                validCount++;
+            }
+        }
+        
+        if (validCount === 0) {
+            return prices.map(() => null);
+        }
+        
+        const initialEMA = sum / validCount;
+        ema.push(initialEMA);
+        
+        // 나머지 값들은 EMA 계산
+        for (let i = 1; i < prices.length; i++) {
+            if (prices[i] !== null && prices[i] !== undefined) {
+                ema.push((prices[i] - ema[i - 1]) * multiplier + ema[i - 1]);
+            } else {
+                ema.push(ema[i - 1]);
+            }
+        }
+        
+        return ema;
+    }
+
+    // 볼린저 밴드 계산
+    function calculateBollingerBands(prices, period = 20, stdDev = 2) {
+        const sma = calculateMA(prices, period);
+        const upperBand = [];
+        const lowerBand = [];
+        
+        for (let i = 0; i < prices.length; i++) {
+            if (i < period - 1) {
+                upperBand.push(null);
+                lowerBand.push(null);
+            } else {
+                const slice = prices.slice(i - period + 1, i + 1);
+                const mean = sma[i];
+                const variance = slice.reduce((sum, price) => sum + Math.pow(price - mean, 2), 0) / period;
+                const standardDeviation = Math.sqrt(variance);
+                
+                upperBand.push(mean + (stdDev * standardDeviation));
+                lowerBand.push(mean - (stdDev * standardDeviation));
+            }
+        }
+        
+        return { middle: sma, upper: upperBand, lower: lowerBand };
+    }
+
+    // 매매 신호 계산
+    function calculateTradingSignal(prices, ma5, ma20, rsi) {
+        if (prices.length < 2 || !ma5 || !ma20 || !rsi) {
+            return { signal: '분석 불가', strength: 0, description: '데이터 부족' };
+        }
+        
+        const currentPrice = prices[prices.length - 1];
+        const prevPrice = prices[prices.length - 2];
+        const currentMA5 = ma5[ma5.length - 1];
+        const prevMA5 = ma5[ma5.length - 2];
+        const currentMA20 = ma20[ma20.length - 1];
+        const prevMA20 = ma20[ma20.length - 2];
+        const currentRSI = rsi[rsi.length - 1];
+        
+        let signals = [];
+        let strength = 0;
+        
+        // 골든크로스/데드크로스 확인
+        if (currentMA5 !== null && currentMA20 !== null && prevMA5 !== null && prevMA20 !== null) {
+            const wasBelow = prevMA5 < prevMA20;
+            const isAbove = currentMA5 > currentMA20;
+            
+            if (wasBelow && isAbove) {
+                signals.push('골든크로스');
+                strength += 3;
+            } else if (!wasBelow && !isAbove) {
+                signals.push('데드크로스');
+                strength -= 3;
+            }
+        }
+        
+        // 가격과 이동평균선 관계
+        if (currentPrice > currentMA20 && currentMA5 > currentMA20) {
+            signals.push('상승 추세');
+            strength += 2;
+        } else if (currentPrice < currentMA20 && currentMA5 < currentMA20) {
+            signals.push('하락 추세');
+            strength -= 2;
+        }
+        
+        // RSI 과매수/과매도
+        if (currentRSI !== null) {
+            if (currentRSI > 70) {
+                signals.push('과매수');
+                strength -= 1;
+            } else if (currentRSI < 30) {
+                signals.push('과매도');
+                strength += 1;
+            }
+        }
+        
+        // 최종 신호 결정
+        let signal = '중립';
+        let description = '추세 불명확';
+        
+        if (strength >= 4) {
+            signal = '강한 매수';
+            description = '상승 추세 강함';
+        } else if (strength >= 2) {
+            signal = '매수';
+            description = '상승 가능성';
+        } else if (strength <= -4) {
+            signal = '강한 매도';
+            description = '하락 추세 강함';
+        } else if (strength <= -2) {
+            signal = '매도';
+            description = '하락 가능성';
+        } else {
+            description = signals.join(', ') || '추세 불명확';
+        }
+        
+        return { signal, strength, description, details: signals };
+    }
+
+    // 차트 렌더링
+    async function renderChart(symbol, name, range = '3mo') {
+        const modal = document.getElementById('chartModal');
+        const canvas = document.getElementById('chartCanvas');
+        const chartTitle = document.getElementById('chartTitle');
+        
+        if (!modal || !canvas) return;
+        
+        modal.classList.remove('hidden');
+        chartTitle.textContent = `📈 ${name} (${symbol}) - 차트 분석`;
+        
+        // 로딩 표시
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.parentElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--text-muted);">차트 데이터 로딩 중...</div>';
+        canvas.parentElement.innerHTML = `<canvas id="chartCanvas"></canvas>`;
+        
+        try {
+            // 과거 데이터 가져오기
+            const historicalData = await fetchHistoricalData(symbol, range);
+            
+            if (!historicalData || historicalData.length === 0) {
+                throw new Error('데이터를 가져올 수 없습니다');
+            }
+            
+            const dates = historicalData.map(d => d.date);
+            const closes = historicalData.map(d => d.close);
+            const highs = historicalData.map(d => d.high);
+            const lows = historicalData.map(d => d.low);
+            const opens = historicalData.map(d => d.open);
+            
+            // 이동평균선 계산
+            const ma5 = calculateMA(closes, 5);
+            const ma20 = calculateMA(closes, 20);
+            const ma60 = calculateMA(closes, 60);
+            const rsi = calculateRSI(closes, 14);
+            
+            // MACD 계산
+            const macd = calculateMACD(closes);
+            
+            // 볼린저 밴드 계산
+            const bollinger = calculateBollingerBands(closes);
+            
+            // 매매 신호 계산
+            const tradingSignal = calculateTradingSignal(closes, ma5, ma20, rsi);
+            
+            // 현재 값 업데이트
+            const currentPrice = closes[closes.length - 1];
+            const ma20Value = ma20[ma20.length - 1];
+            const rsiValue = rsi[rsi.length - 1];
+            const changePercent = ((closes[closes.length - 1] - closes[0]) / closes[0]) * 100;
+            
+            document.getElementById('currentPrice').textContent = `$${currentPrice.toFixed(2)}`;
+            document.getElementById('ma20Value').textContent = ma20Value ? `$${ma20Value.toFixed(2)}` : '-';
+            document.getElementById('rsiValue').textContent = rsiValue ? rsiValue.toFixed(2) : '-';
+            
+            const changePercentEl = document.getElementById('changePercent');
+            changePercentEl.textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+            changePercentEl.className = `indicator-value ${changePercent >= 0 ? 'positive' : 'negative'}`;
+            
+            // 매매 신호 표시
+            const signalEl = document.getElementById('tradingSignal');
+            signalEl.textContent = tradingSignal.signal;
+            signalEl.className = `indicator-value ${
+                tradingSignal.strength >= 2 ? 'positive' : 
+                tradingSignal.strength <= -2 ? 'negative' : ''
+            }`;
+            signalEl.title = tradingSignal.description;
+            
+            // Chart.js로 차트 렌더링
+            const chartCanvas = document.getElementById('chartCanvas');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            // 차트 타입 확인
+            const chartType = document.getElementById('chartType')?.value || 'line';
+            const showMA5 = document.querySelector('input[data-ma="5"]')?.checked || false;
+            const showMA20 = document.querySelector('input[data-ma="20"]')?.checked || false;
+            const showMA60 = document.querySelector('input[data-ma="60"]')?.checked || false;
+            const showMACD = document.getElementById('showMACD')?.checked || false;
+            const showBollinger = document.getElementById('showBollinger')?.checked || false;
+            
+            const datasets = [];
+            
+            // 캔들스틱 차트인 경우
+            if (chartType === 'candlestick') {
+                // Chart.js는 기본적으로 캔들스틱을 지원하지 않으므로, 라인 차트로 시뮬레이션
+                datasets.push({
+                    label: '고가',
+                    data: highs,
+                    borderColor: 'rgba(239, 68, 68, 0.3)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    pointRadius: 0
+                });
+                datasets.push({
+                    label: '저가',
+                    data: lows,
+                    borderColor: 'rgba(16, 185, 129, 0.3)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    pointRadius: 0
+                });
+                datasets.push({
+                    label: '종가',
+                    data: closes,
+                    borderColor: 'rgb(139, 92, 246)',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                });
+            } else {
+                // 라인 차트
+                datasets.push({
+                    label: '종가',
+                    data: closes,
+                    borderColor: 'rgb(139, 92, 246)',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                });
+            }
+            
+            // 이동평균선 추가
+            if (showMA5) {
+                datasets.push({
+                    label: '5일선',
+                    data: ma5,
+                    borderColor: 'rgb(6, 182, 212)',
+                    borderWidth: 1.5,
+                    fill: false,
+                    pointRadius: 0,
+                    borderDash: [5, 5]
+                });
+            }
+            
+            if (showMA20) {
+                datasets.push({
+                    label: '20일선',
+                    data: ma20,
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0
+                });
+            }
+            
+            if (showMA60) {
+                datasets.push({
+                    label: '60일선',
+                    data: ma60,
+                    borderColor: 'rgb(245, 158, 11)',
+                    borderWidth: 1.5,
+                    fill: false,
+                    pointRadius: 0,
+                    borderDash: [5, 5]
+                });
+            }
+            
+            // 볼린저 밴드 추가
+            if (showBollinger) {
+                datasets.push({
+                    label: '볼린저 상단',
+                    data: bollinger.upper,
+                    borderColor: 'rgba(139, 92, 246, 0.5)',
+                    borderWidth: 1,
+                    fill: '+1',
+                    pointRadius: 0,
+                    borderDash: [3, 3]
+                });
+                datasets.push({
+                    label: '볼린저 중간',
+                    data: bollinger.middle,
+                    borderColor: 'rgba(139, 92, 246, 0.3)',
+                    borderWidth: 1,
+                    fill: false,
+                    pointRadius: 0
+                });
+                datasets.push({
+                    label: '볼린저 하단',
+                    data: bollinger.lower,
+                    borderColor: 'rgba(139, 92, 246, 0.5)',
+                    borderWidth: 1,
+                    fill: '-1',
+                    pointRadius: 0,
+                    borderDash: [3, 3],
+                    backgroundColor: 'rgba(139, 92, 246, 0.05)'
+                });
+            }
+            
+            chartInstance = new Chart(chartCanvas, {
+                type: 'line',
+                data: {
+                    labels: dates.map(d => d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: 'var(--text)',
+                                font: {
+                                    family: 'Inter, sans-serif',
+                                    size: 12
+                                },
+                                padding: 15,
+                                filter: function(item) {
+                                    // 볼린저 밴드 중간선은 범례에서 제외
+                                    return item.text !== '볼린저 중간';
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(139, 92, 246, 0.5)',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: 'var(--text-muted)',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: {
+                                color: 'var(--border)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: 'var(--text-muted)',
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            },
+                            grid: {
+                                color: 'var(--border)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+            
+            // MACD 차트가 별도로 필요한 경우 (추후 구현 가능)
+            if (showMACD) {
+                console.log('MACD:', macd);
+                // MACD는 별도 차트로 표시하거나 하단에 추가 가능
+            }
+            
+            currentChartSymbol = symbol;
+            
+        } catch (error) {
+            console.error('차트 렌더링 실패:', error);
+            canvas.parentElement.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--danger);">차트 데이터를 불러올 수 없습니다: ${error.message}</div>`;
+        }
+    }
+
+    // 차트 모달 이벤트 리스너
+    const chartModal = document.getElementById('chartModal');
+    const closeChartModal = document.getElementById('closeChartModal');
+    const chartRange = document.getElementById('chartRange');
+    
+    if (closeChartModal) {
+        closeChartModal.addEventListener('click', () => {
+            chartModal.classList.add('hidden');
+        });
+    }
+    
+    if (chartModal) {
+        chartModal.addEventListener('click', (e) => {
+            if (e.target === chartModal) {
+                chartModal.classList.add('hidden');
+            }
+        });
+    }
+    
+    // 차트 타입 변경
+    const chartType = document.getElementById('chartType');
+    if (chartType) {
+        chartType.addEventListener('change', async (e) => {
+            if (currentChartSymbol) {
+                const chartTitleEl = document.getElementById('chartTitle');
+                const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : currentChartSymbol;
+                const range = chartRange?.value || '3mo';
+                await renderChart(currentChartSymbol, name, range);
+            }
+        });
+    }
+    
+    // 차트 기간 변경
+    if (chartRange) {
+        chartRange.addEventListener('change', async (e) => {
+            if (currentChartSymbol) {
+                // 차트 제목에서 이름 추출 또는 symbol 사용
+                const chartTitleEl = document.getElementById('chartTitle');
+                const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : currentChartSymbol;
+                await renderChart(currentChartSymbol, name, e.target.value);
+            }
+        });
+    }
+    
+    // 이동평균선 및 지표 체크박스 변경
+    document.addEventListener('change', async (e) => {
+        if (currentChartSymbol && (
+            e.target.matches('input[data-ma]') || 
+            e.target.id === 'showMACD' || 
+            e.target.id === 'showBollinger'
+        )) {
+            const chartTitleEl = document.getElementById('chartTitle');
+            const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : currentChartSymbol;
+            const range = chartRange?.value || '3mo';
+            await renderChart(currentChartSymbol, name, range);
+        }
+    });
+
+    // 차트 버튼 클릭 이벤트 (이벤트 위임 사용)
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('.chart-btn')) {
+            const btn = e.target.closest('.chart-btn');
+            const symbol = btn.dataset.symbol;
+            const name = btn.dataset.name || symbol;
+            
+            if (symbol) {
+                await renderChart(symbol, name);
+            }
+        }
+    });
 });
 
 
