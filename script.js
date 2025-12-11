@@ -4566,27 +4566,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 차트 렌더링
     async function renderChart(symbol, name, range = '3mo') {
+        console.log('🔍 renderChart 호출됨:', { symbol, name, range });
+        
         const modal = document.getElementById('chartModal');
         const chartTitle = document.getElementById('chartTitle');
         const chartContainer = document.querySelector('.chart-container-wrapper');
         
+        console.log('🔍 DOM 요소 확인:', { 
+            modal: !!modal, 
+            chartTitle: !!chartTitle, 
+            chartContainer: !!chartContainer 
+        });
+        
         if (!modal) {
-            console.error('차트 모달을 찾을 수 없습니다');
+            console.error('❌ 차트 모달을 찾을 수 없습니다');
+            alert('차트 모달을 찾을 수 없습니다. 페이지를 새로고침해주세요.');
             return;
         }
         
         if (!chartContainer) {
-            console.error('차트 컨테이너를 찾을 수 없습니다');
+            console.error('❌ 차트 컨테이너를 찾을 수 없습니다');
+            alert('차트 컨테이너를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
             return;
         }
         
+        // 모달 표시
+        console.log('📱 모달 표시 중...');
         modal.classList.remove('hidden');
+        console.log('✅ 모달 표시 완료, hidden 클래스 제거됨');
+        
         if (chartTitle) {
             chartTitle.textContent = `📈 ${name} (${symbol}) - 차트 분석`;
         }
         
         // 로딩 표시
         chartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--text-muted);">차트 데이터 로딩 중...</div>';
+        console.log('⏳ 로딩 표시 완료');
         
         try {
             console.log(`📈 차트 렌더링 시작: ${symbol}, 기간: ${range}`);
