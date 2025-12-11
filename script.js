@@ -5173,6 +5173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
         modal.style.display = 'flex'; // 강제로 display 설정
         modal.style.zIndex = '10000'; // z-index 확실히 설정
+        window.currentChartSymbol = symbol; // 현재 차트 심볼 저장
         console.log('✅ 모달 표시 완료, hidden 클래스 제거됨, display:', modal.style.display);
         
         // 모달이 실제로 보이는지 확인
