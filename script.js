@@ -4514,7 +4514,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.log('Service Worker registration failed:', err));
     }
 
-    // Theme Toggle
+    // Theme Toggle - 즉시 초기화
     function initThemeToggle() {
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
@@ -4523,8 +4523,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const themeBtn = document.getElementById('themeToggle');
         if (themeBtn) {
             updateThemeButton(savedTheme);
-            themeBtn.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
+            // 기존 이벤트 리스너 제거 후 새로 등록 (중복 방지)
+            const newThemeBtn = themeBtn.cloneNode(true);
+            themeBtn.parentNode.replaceChild(newThemeBtn, themeBtn);
+            
+            newThemeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
                 console.log('🎨 테마 전환:', currentTheme, '→', newTheme);
                 document.documentElement.setAttribute('data-theme', newTheme);
@@ -4532,6 +4538,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateThemeButton(newTheme);
                 console.log('✅ 테마 전환 완료:', newTheme);
             });
+            console.log('✅ 테마 토글 버튼 이벤트 리스너 등록 완료');
         } else {
             console.error('❌ 테마 토글 버튼을 찾을 수 없습니다');
         }
