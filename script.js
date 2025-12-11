@@ -2798,6 +2798,19 @@ document.addEventListener('DOMContentLoaded', () => {
         initChartButtonHandler();
     }
     
+    // 테마 토글 함수 정의 (먼저 정의)
+    function updateThemeButton(theme) {
+        const themeBtn = document.getElementById('themeToggle');
+        if (themeBtn) {
+            themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+            themeBtn.setAttribute('aria-label', theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환');
+            themeBtn.title = theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환';
+            console.log('🎨 테마 버튼 업데이트:', theme, '아이콘:', themeBtn.textContent);
+        } else {
+            console.error('❌ 테마 버튼을 찾을 수 없습니다');
+        }
+    }
+
     // 테마 토글 버튼 이벤트 (즉시 등록)
     const themeToggleBtn = document.getElementById('themeToggle');
     if (themeToggleBtn) {
