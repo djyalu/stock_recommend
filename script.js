@@ -5431,7 +5431,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // 볼린저 밴드 추가
-            if (showBollinger) {
+            if (showBollinger && bollinger && bollinger.upper && bollinger.middle && bollinger.lower) {
+                // 볼린저 밴드 상단
                 datasets.push({
                     label: '볼린저 상단',
                     data: bollinger.upper,
@@ -5439,8 +5440,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: 1,
                     fill: '+1',
                     pointRadius: 0,
-                    borderDash: [3, 3]
+                    borderDash: [3, 3],
+                    backgroundColor: 'rgba(139, 92, 246, 0.05)'
                 });
+                // 볼린저 밴드 중간 (MA20)
                 datasets.push({
                     label: '볼린저 중간',
                     data: bollinger.middle,
@@ -5449,6 +5452,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     fill: false,
                     pointRadius: 0
                 });
+                // 볼린저 밴드 하단
                 datasets.push({
                     label: '볼린저 하단',
                     data: bollinger.lower,
@@ -5487,22 +5491,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     yAxisID: 'y1',
                     tension: 0.1
                 });
-                // Histogram (MACD - Signal) - 라인 차트로 표시
-                if (macd.histogram) {
+                // Histogram (MACD - Signal) - 바 차트로 표시
+                if (macd.histogram && macd.histogram.length > 0) {
                     datasets.push({
                         label: 'Histogram',
                         data: macd.histogram,
-                        borderColor: macd.histogram.map((val, idx) => 
-                            val >= 0 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)'
+                        borderColor: 'rgba(139, 92, 246, 0.6)',
+                        backgroundColor: macd.histogram.map(val => 
+                            val >= 0 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'
                         ),
-                        backgroundColor: macd.histogram.map((val, idx) => 
-                            val >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'
-                        ),
-                        borderWidth: 2,
+                        borderWidth: 1,
                         fill: true,
                         pointRadius: 0,
                         yAxisID: 'y1',
-                        tension: 0.1
+                        tension: 0
                     });
                 }
             }
@@ -5599,12 +5601,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 console.log('✅ Chart.js 인스턴스 생성 완료');
+                window.currentChartSymbol = symbol; // 현재 차트 심볼 저장
             } catch (chartError) {
                 console.error('❌ Chart.js 생성 오류:', chartError);
-                throw new Error(`차트 생성 실패: ${chartError.message}`);
+                // 로딩 오버레이 제거
+                const loadingOverlay = chartContainer.querySelector('#chartLoadingOverlay');
+                if (loadingOverlay) {
+                    loadingOverlay.remove();
+                }
+                // 에러 메시지 표시
+                const errorMsg = chartError.message || '알 수 없는 오류가 발생했습니다.';
+                chartContainer.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; gap: 1rem; color: var(--text-muted); text-align: center; padding: 2rem;">
+                        <div style="font-size: 3rem;">⚠️</div>
+                        <div style="font-size: 1.25rem; font-weight: 600; color: var(--text);">차트 생성 실패</div>
+                        <div style="font-size: 0.875rem;">${errorMsg}</div>
+                        <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: var(--gradient-primary); border: none; border-radius: var(--radius-md); color: white; font-weight: 600; cursor: pointer; margin-top: 1rem;">
+                            페이지 새로고침
+                        </button>
+                    </div>
+                `;
+                throw new Error(`차트 생성 실패: ${errorMsg}`);
             }
-            
-            window.currentChartSymbol = symbol;
             
         } catch (error) {
             console.error('❌ 차트 렌더링 실패:', error);
@@ -5719,10 +5737,17 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.id === 'showMACD' || 
             e.target.id === 'showBollinger'
         )) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔄 차트 옵션 변경 감지:', e.target.id || e.target.dataset.ma);
             const chartTitleEl = document.getElementById('chartTitle');
             const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : window.currentChartSymbol;
             const range = chartRange?.value || '3mo';
-            await renderChart(window.currentChartSymbol, name, range);
+            try {
+                await renderChart(window.currentChartSymbol, name, range);
+            } catch (error) {
+                console.error('❌ 차트 업데이트 오류:', error);
+            }
         }
     });
 
