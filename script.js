@@ -1899,18 +1899,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 추천 수량은 이미 위에서 가져왔으므로 재사용
             // 결과 렌더링 (뉴스 + 추천 종목)
-            const finalRecommendations = recommendations.slice(0, recommendCount);
-            console.log(`📊 최종 분석 결과: ${recommendations.length}개 종목 분석 완료`);
+            const finalRecommendations = filteredRecommendations.slice(0, recommendCount);
+            console.log(`📊 최종 분석 결과: ${filteredRecommendations.length}개 종목 분석 완료 (${selectedMarket})`);
             console.log(`🎯 최종 추천: ${finalRecommendations.length}개 종목 표시 (요청: ${recommendCount}개)`);
             
             // 최종 추천 종목 로그
-            console.log(`🏆 최종 추천 종목 목록:`);
+            console.log(`🏆 최종 추천 종목 목록 (${selectedMarket}):`);
             finalRecommendations.forEach((rec, idx) => {
                 console.log(`  ${idx + 1}. ${rec.name} (${rec.symbol}): ${rec.score.toFixed(1)}점`);
             });
             
             // 제외된 고점수 종목 확인 (디버깅용)
-            const excludedHighScore = recommendations.slice(recommendCount).filter(r => r.score >= 70);
+            const excludedHighScore = filteredRecommendations.slice(recommendCount).filter(r => r.score >= 70);
             if (excludedHighScore.length > 0) {
                 console.warn(`⚠️ 고점수 종목이 추천 수량 제한으로 제외되었습니다:`);
                 excludedHighScore.forEach(rec => {
