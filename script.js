@@ -419,7 +419,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const usBadgeText = document.getElementById('usBadgeText');
         const krBadgeText = document.getElementById('krBadgeText');
         
-        if (!recommendCountSelect || !usBadgeText || !krBadgeText) return;
+        if (!recommendCountSelect || !usBadgeText || !krBadgeText) {
+            console.warn('배지 업데이트: DOM 요소를 찾을 수 없습니다');
+            return;
+        }
         
         const recommendCount = parseInt(recommendCountSelect.value) || 10;
         // 추천 종목 수의 절반씩 배분 (반올림)
@@ -429,15 +432,27 @@ document.addEventListener('DOMContentLoaded', () => {
         
         usBadgeText.textContent = `미국 ${usCount}개`;
         krBadgeText.textContent = `한국 ${krCount}개`;
+        
+        console.log(`배지 업데이트: 미국 ${usCount}개, 한국 ${krCount}개 (총 ${recommendCount}개)`);
     }
     
-    // recommendCount 변경 시 배지 업데이트
-    const recommendCountSelect = document.getElementById('recommendCount');
-    if (recommendCountSelect) {
-        recommendCountSelect.addEventListener('change', updateBadgeTexts);
-        // 초기 로드 시에도 업데이트
-        updateBadgeTexts();
+    // recommendCount 변경 시 배지 업데이트 (DOM이 준비된 후 실행)
+    function initBadgeUpdater() {
+        const recommendCountSelect = document.getElementById('recommendCount');
+        if (recommendCountSelect) {
+            // 이벤트 리스너 추가
+            recommendCountSelect.addEventListener('change', updateBadgeTexts);
+            // 초기 로드 시에도 업데이트
+            updateBadgeTexts();
+            console.log('배지 업데이터 초기화 완료');
+        } else {
+            // DOM이 아직 준비되지 않았으면 재시도
+            setTimeout(initBadgeUpdater, 100);
+        }
     }
+    
+    // 초기화 실행
+    initBadgeUpdater();
     
     // ========== History Functions ==========
     const HISTORY_KEY = 'stock_guru_history';
