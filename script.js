@@ -4282,6 +4282,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 과거 주가 데이터 가져오기
     async function fetchHistoricalData(ticker, range = '3mo', interval = '1d') {
         try {
+            console.log(`📊 차트 데이터 요청: ${ticker}, 기간: ${range}`);
             const targetUrl = `${BASE_URL}/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
             const data = await fetchWithProxy(targetUrl);
 
@@ -4290,28 +4291,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 const timestamps = result.timestamp || [];
                 const quote = result.indicators.quote[0];
                 
+                if (!quote || !timestamps.length) {
+                    console.warn('차트 데이터가 비어있습니다');
+                    return null;
+                }
+                
                 // 유효한 데이터만 필터링
                 const validData = [];
                 for (let i = 0; i < timestamps.length; i++) {
-                    if (quote.close[i] !== null && quote.close[i] !== undefined) {
+                    if (quote.close && quote.close[i] !== null && quote.close[i] !== undefined) {
                         validData.push({
                             date: new Date(timestamps[i] * 1000),
                             timestamp: timestamps[i],
                             close: quote.close[i],
-                            high: quote.high[i],
-                            low: quote.low[i],
-                            open: quote.open[i],
-                            volume: quote.volume[i] || 0
+                            high: quote.high && quote.high[i] !== null ? quote.high[i] : quote.close[i],
+                            low: quote.low && quote.low[i] !== null ? quote.low[i] : quote.close[i],
+                            open: quote.open && quote.open[i] !== null ? quote.open[i] : quote.close[i],
+                            volume: quote.volume && quote.volume[i] ? quote.volume[i] : 0
                         });
                     }
                 }
                 
-                return validData;
+                console.log(`✅ 차트 데이터 수신 완료: ${validData.length}개 데이터 포인트`);
+                return validData.length > 0 ? validData : null;
             }
+            console.warn('차트 데이터 형식이 올바르지 않습니다');
             return null;
         } catch (error) {
-            console.error('과거 데이터 가져오기 실패:', error);
-            return null;
+            console.error('❌ 과거 데이터 가져오기 실패:', error);
+            throw error; // 에러를 다시 throw하여 상위에서 처리할 수 있도록
         }
     }
 
@@ -4552,12 +4560,33 @@ document.addEventListener('DOMContentLoaded', () => {
         chartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--text-muted);">차트 데이터 로딩 중...</div>';
         
         try {
+            console.log(`📈 차트 렌더링 시작: ${symbol}, 기간: ${range}`);
+            
             // 과거 데이터 가져오기
-            const historicalData = await fetchHistoricalData(symbol, range);
+            let historicalData;
+            try {
+                historicalData = await fetchHistoricalData(symbol, range);
+            } catch (proxyError) {
+                console.error('프록시를 통한 데이터 가져오기 실패:', proxyError);
+                // 사용자에게 친화적인 메시지 표시
+                chartContainer.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; gap: 1rem; color: var(--text-muted); text-align: center; padding: 2rem;">
+                        <div style="font-size: 3rem;">⚠️</div>
+                        <div style="font-size: 1.25rem; font-weight: 600; color: var(--text);">차트 데이터를 불러올 수 없습니다</div>
+                        <div style="font-size: 0.875rem;">CORS 프록시 서버에 연결할 수 없습니다.<br>잠시 후 다시 시도해주세요.</div>
+                        <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: var(--gradient-primary); border: none; border-radius: var(--radius-md); color: white; font-weight: 600; cursor: pointer; margin-top: 1rem;">
+                            페이지 새로고침
+                        </button>
+                    </div>
+                `;
+                return;
+            }
             
             if (!historicalData || historicalData.length === 0) {
-                throw new Error('데이터를 가져올 수 없습니다');
+                throw new Error('차트 데이터가 없습니다');
             }
+            
+            console.log(`✅ 데이터 가져오기 완료: ${historicalData.length}개 데이터 포인트`);
             
             const dates = historicalData.map(d => d.date);
             const closes = historicalData.map(d => d.close);
@@ -4809,9 +4838,15 @@ document.addEventListener('DOMContentLoaded', () => {
             currentChartSymbol = symbol;
             
         } catch (error) {
-            console.error('차트 렌더링 실패:', error);
+            console.error('❌ 차트 렌더링 실패:', error);
             if (chartContainer) {
-                chartContainer.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 500px; color: var(--danger);">차트 데이터를 불러올 수 없습니다: ${error.message}</div>`;
+                chartContainer.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; gap: 1rem; color: var(--danger); text-align: center; padding: 2rem;">
+                        <div style="font-size: 3rem;">❌</div>
+                        <div style="font-size: 1.25rem; font-weight: 600;">차트를 불러올 수 없습니다</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">${error.message || '알 수 없는 오류가 발생했습니다'}</div>
+                    </div>
+                `;
             }
         }
     }
