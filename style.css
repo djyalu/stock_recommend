@@ -1937,6 +1937,17 @@ body {
         padding: 0 1rem;
     }
     
+    .market-selector {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+    
+    .market-option {
+        width: 100%;
+        justify-content: center;
+    }
+    
     .search-input-group {
         flex-direction: column;
         gap: 0.75rem;
