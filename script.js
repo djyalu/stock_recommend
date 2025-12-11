@@ -4982,33 +4982,35 @@ document.addEventListener('DOMContentLoaded', () => {
                             borderWidth: 1
                         }
                     },
-                    scales: {
-                        x: {
-                            ticks: {
-                                color: 'var(--text-muted)',
-                                maxRotation: 45,
-                                minRotation: 45
-                            },
-                            grid: {
-                                color: 'var(--border)'
-                            }
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            ticks: {
-                                color: 'var(--text-muted)',
-                                callback: function(value) {
-                                    return '$' + value.toFixed(2);
+                    scales: (() => {
+                        const scalesConfig = {
+                            x: {
+                                ticks: {
+                                    color: 'var(--text-muted)',
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                },
+                                grid: {
+                                    color: 'var(--border)'
                                 }
                             },
-                            grid: {
-                                color: 'var(--border)'
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                ticks: {
+                                    color: 'var(--text-muted)',
+                                    callback: function(value) {
+                                        return '$' + value.toFixed(2);
+                                    }
+                                },
+                                grid: {
+                                    color: 'var(--border)'
+                                }
                             }
-                        },
-                        ...(showMACD ? {
-                            y1: {
+                        };
+                        if (showMACD) {
+                            scalesConfig.y1 = {
                                 type: 'linear',
                                 display: true,
                                 position: 'right',
@@ -5018,9 +5020,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 grid: {
                                     drawOnChartArea: false
                                 }
-                            }
-                        } : {})
-                    },
+                            };
+                        }
+                        return scalesConfig;
+                    })(),
                     interaction: {
                         mode: 'index',
                         intersect: false
