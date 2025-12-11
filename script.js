@@ -4307,7 +4307,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ========== Chart Analysis Feature ==========
-    let chartInstance = null;
+    // 전역 차트 인스턴스 변수
+    window.chartInstance = null;
     let currentChartSymbol = null;
 
     // 과거 주가 데이터 가져오기
@@ -4747,8 +4748,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('차트 캔버스를 생성할 수 없습니다');
             }
             
-            if (chartInstance) {
-                chartInstance.destroy();
+            // 전역 chartInstance 변수에 접근
+            if (window.chartInstance) {
+                window.chartInstance.destroy();
             }
             
             // 차트 타입 확인
