@@ -4750,11 +4750,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }`;
             signalEl.title = tradingSignal.description;
             
-            // 차트 컨테이너에 canvas 다시 생성
-            chartContainer.innerHTML = '<canvas id="chartCanvas"></canvas>';
+            // 로딩 오버레이 제거
+            const loadingOverlay = chartContainer.querySelector('#chartLoadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.remove();
+            }
             
-            // Chart.js로 차트 렌더링
-            const chartCanvas = document.getElementById('chartCanvas');
+            // 차트 컨테이너에 canvas 다시 생성 (기존 캔버스가 없거나 제거된 경우)
+            let chartCanvas = document.getElementById('chartCanvas');
+            if (!chartCanvas) {
+                chartContainer.innerHTML = '<canvas id="chartCanvas"></canvas>';
+                chartCanvas = document.getElementById('chartCanvas');
+            }
             if (!chartCanvas) {
                 throw new Error('차트 캔버스를 생성할 수 없습니다');
             }
