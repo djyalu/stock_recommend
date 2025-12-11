@@ -4309,7 +4309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========== Chart Analysis Feature ==========
     // 전역 차트 인스턴스 변수
     window.chartInstance = null;
-    let currentChartSymbol = null;
+    window.currentChartSymbol = null;
 
     // 과거 주가 데이터 가져오기
     async function fetchHistoricalData(ticker, range = '3mo', interval = '1d') {
@@ -4960,7 +4960,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // MACD는 별도 차트로 표시하거나 하단에 추가 가능
             }
             
-            currentChartSymbol = symbol;
+            window.currentChartSymbol = symbol;
             
         } catch (error) {
             console.error('❌ 차트 렌더링 실패:', error);
