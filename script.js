@@ -4968,28 +4968,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 차트 버튼 클릭 이벤트 (이벤트 위임 사용)
     document.addEventListener('click', async (e) => {
-        if (e.target.closest('.chart-btn')) {
+        const chartBtn = e.target.closest('.chart-btn');
+        if (chartBtn) {
+            console.log('🎯 차트 버튼 클릭 감지!', chartBtn);
             e.preventDefault();
             e.stopPropagation();
             
-            const btn = e.target.closest('.chart-btn');
-            const symbol = btn.dataset.symbol;
-            const name = btn.dataset.name || symbol;
+            const symbol = chartBtn.dataset.symbol;
+            const name = chartBtn.dataset.name || symbol;
             
-            console.log('차트 버튼 클릭됨:', { symbol, name });
+            console.log('📊 차트 버튼 데이터:', { symbol, name, btn: chartBtn });
             
-            if (symbol) {
-                try {
-                    await renderChart(symbol, name);
-                } catch (error) {
-                    console.error('차트 렌더링 오류:', error);
-                    alert(`차트를 불러오는 중 오류가 발생했습니다: ${error.message}`);
-                }
-            } else {
-                console.error('차트 버튼에 symbol이 없습니다');
+            if (!symbol) {
+                console.error('❌ 차트 버튼에 symbol이 없습니다', chartBtn);
+                alert('차트 버튼에 종목 정보가 없습니다.');
+                return;
+            }
+            
+            try {
+                console.log('🚀 renderChart 호출 시작...');
+                await renderChart(symbol, name);
+                console.log('✅ renderChart 완료');
+            } catch (error) {
+                console.error('❌ 차트 렌더링 오류:', error);
+                alert(`차트를 불러오는 중 오류가 발생했습니다: ${error.message}`);
             }
         }
     });
+    
+    console.log('✅ 차트 버튼 이벤트 리스너 등록 완료');
 });
 
 
