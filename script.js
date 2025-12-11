@@ -1249,51 +1249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Use real data if available, otherwise use simulation
                 if (!financialData) {
-                    // Simulation data (fallback) - Use seeded random for consistency
-                    // Create a simple seeded random generator based on ticker
-                    function seededRandom(seed) {
-                        let value = seed;
-                        return function() {
-                            value = (value * 9301 + 49297) % 233280;
-                            return value / 233280;
-                        };
-                    }
-                    
-                    // Generate seed from ticker string (consistent for same ticker)
-                    let seed = 0;
-                    for (let i = 0; i < ticker.length; i++) {
-                        seed = ((seed << 5) - seed) + ticker.charCodeAt(i);
-                        seed = seed & seed; // Convert to 32bit integer
-                    }
-                    seed = Math.abs(seed);
-                    
-                    const random = seededRandom(seed);
-                    
-                    // Use fixed base price for simulation (not currentPrice which changes)
-                    // This ensures PER and EPS are consistent
-                    const basePrice = 100 + (random() * 200); // Fixed for this ticker
-                    
-                    financialData = {
-                        per: Math.abs(basePrice / (random() * 10 + 1)),
-                        pbr: random() * 5 + 1,
-                        roe: random() * 20 + 5,
-                        debtToEquity: random() * 100,
-                        revenueGrowth: random() * 20,
-                        dividendYield: random() * 3,
-                        eps: basePrice / (random() * 20 + 5),
-                        marketCap: 0
-                    };
-                    
-                    // Use seeded random for sentiment (fixed for this ticker)
-                    const sentimentRandom = random();
-                    // Use fixed sentiment based on seed, not actual price change
-                    financialData.sentiment = sentimentRandom * 0.4 + 0.5; // 0.5 to 0.9 range
-                    
-                    // Also fix changePercent for simulation consistency
-                    // This ensures guru advice is consistent
-                    const changePercentRandom = random();
-                    financialData.simulatedChangePercent = (changePercentRandom - 0.5) * 6; // -3% to +3% range
-                    
+                    financialData = generateSimulatedFinancialData(ticker);
                     console.log('Using SIMULATION financial data (seeded for consistency)');
                 }
 
@@ -1324,51 +1280,51 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 시뮬레이션 재무 데이터 생성 함수
     function generateSimulatedFinancialData(ticker) {
-        // Simulation data (fallback) - Use seeded random for consistency
-        // Create a simple seeded random generator based on ticker
-        function seededRandom(seed) {
-            let value = seed;
-            return function() {
-                value = (value * 9301 + 49297) % 233280;
-                return value / 233280;
-            };
-        }
-        
-        // Generate seed from ticker string (consistent for same ticker)
-        let seed = 0;
-        for (let i = 0; i < ticker.length; i++) {
-            seed = ((seed << 5) - seed) + ticker.charCodeAt(i);
-            seed = seed & seed; // Convert to 32bit integer
-        }
-        seed = Math.abs(seed);
-        
-        const random = seededRandom(seed);
-        
-        // Use fixed base price for simulation (not currentPrice which changes)
-        // This ensures PER and EPS are consistent
-        const basePrice = 100 + (random() * 200); // Fixed for this ticker
-        
+                    // Simulation data (fallback) - Use seeded random for consistency
+                    // Create a simple seeded random generator based on ticker
+                    function seededRandom(seed) {
+                        let value = seed;
+                        return function() {
+                            value = (value * 9301 + 49297) % 233280;
+                            return value / 233280;
+                        };
+                    }
+                    
+                    // Generate seed from ticker string (consistent for same ticker)
+                    let seed = 0;
+                    for (let i = 0; i < ticker.length; i++) {
+                        seed = ((seed << 5) - seed) + ticker.charCodeAt(i);
+                        seed = seed & seed; // Convert to 32bit integer
+                    }
+                    seed = Math.abs(seed);
+                    
+                    const random = seededRandom(seed);
+                    
+                    // Use fixed base price for simulation (not currentPrice which changes)
+                    // This ensures PER and EPS are consistent
+                    const basePrice = 100 + (random() * 200); // Fixed for this ticker
+                    
         const financialData = {
-            per: Math.abs(basePrice / (random() * 10 + 1)),
-            pbr: random() * 5 + 1,
-            roe: random() * 20 + 5,
-            debtToEquity: random() * 100,
-            revenueGrowth: random() * 20,
-            dividendYield: random() * 3,
-            eps: basePrice / (random() * 20 + 5),
-            marketCap: 0
-        };
-        
-        // Use seeded random for sentiment (fixed for this ticker)
-        const sentimentRandom = random();
-        // Use fixed sentiment based on seed, not actual price change
-        financialData.sentiment = sentimentRandom * 0.4 + 0.5; // 0.5 to 0.9 range
-        
-        // Also fix changePercent for simulation consistency
-        // This ensures guru advice is consistent
-        const changePercentRandom = random();
-        financialData.simulatedChangePercent = (changePercentRandom - 0.5) * 6; // -3% to +3% range
-        
+                        per: Math.abs(basePrice / (random() * 10 + 1)),
+                        pbr: random() * 5 + 1,
+                        roe: random() * 20 + 5,
+                        debtToEquity: random() * 100,
+                        revenueGrowth: random() * 20,
+                        dividendYield: random() * 3,
+                        eps: basePrice / (random() * 20 + 5),
+                        marketCap: 0
+                    };
+                    
+                    // Use seeded random for sentiment (fixed for this ticker)
+                    const sentimentRandom = random();
+                    // Use fixed sentiment based on seed, not actual price change
+                    financialData.sentiment = sentimentRandom * 0.4 + 0.5; // 0.5 to 0.9 range
+                    
+                    // Also fix changePercent for simulation consistency
+                    // This ensures guru advice is consistent
+                    const changePercentRandom = random();
+                    financialData.simulatedChangePercent = (changePercentRandom - 0.5) * 6; // -3% to +3% range
+                    
         return financialData;
     }
     
@@ -1400,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return null;
         }
     }
-    
+
     // 네이버 금융에서 한국 주식 뉴스 가져오기 (주식 정보 기반)
     async function fetchNaverFinanceNews() {
         try {
