@@ -5563,7 +5563,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ticks: {
                                     color: 'var(--text-muted)',
                                     callback: function(value) {
-                                        return '$' + value.toFixed(2);
+                                        // 한국 주식인지 확인하여 포맷팅
+                                        if (isKoreanStock) {
+                                            return '₩' + Math.round(value).toLocaleString('ko-KR');
+                                        } else {
+                                            return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                        }
                                     }
                                 },
                                 grid: {
@@ -5670,25 +5675,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartType = document.getElementById('chartType');
     if (chartType) {
         chartType.addEventListener('change', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (window.currentChartSymbol) {
+                console.log('🔄 차트 타입 변경:', e.target.value);
                 const chartTitleEl = document.getElementById('chartTitle');
                 const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : window.currentChartSymbol;
                 const range = chartRange?.value || '3mo';
-                await renderChart(window.currentChartSymbol, name, range);
+                try {
+                    await renderChart(window.currentChartSymbol, name, range);
+                } catch (error) {
+                    console.error('❌ 차트 타입 변경 오류:', error);
+                }
             }
         });
+        console.log('✅ 차트 타입 변경 이벤트 리스너 등록 완료');
     }
     
     // 차트 기간 변경
     if (chartRange) {
         chartRange.addEventListener('change', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (window.currentChartSymbol) {
+                console.log('🔄 차트 기간 변경:', e.target.value);
                 // 차트 제목에서 이름 추출 또는 symbol 사용
                 const chartTitleEl = document.getElementById('chartTitle');
                 const name = chartTitleEl ? chartTitleEl.textContent.split('(')[0].trim().replace('📈 ', '') : window.currentChartSymbol;
-                await renderChart(window.currentChartSymbol, name, e.target.value);
+                try {
+                    await renderChart(window.currentChartSymbol, name, e.target.value);
+                } catch (error) {
+                    console.error('❌ 차트 기간 변경 오류:', error);
+                }
             }
         });
+        console.log('✅ 차트 기간 변경 이벤트 리스너 등록 완료');
     }
     
     // 이동평균선 및 지표 체크박스 변경
