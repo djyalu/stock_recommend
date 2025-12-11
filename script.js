@@ -4947,12 +4947,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (error) {
             console.error('❌ 차트 렌더링 실패:', error);
+            console.error('❌ 에러 스택:', error.stack);
             if (chartContainer) {
                 chartContainer.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; gap: 1rem; color: var(--danger); text-align: center; padding: 2rem;">
                         <div style="font-size: 3rem;">❌</div>
                         <div style="font-size: 1.25rem; font-weight: 600;">차트를 불러올 수 없습니다</div>
                         <div style="font-size: 0.875rem; color: var(--text-muted);">${error.message || '알 수 없는 오류가 발생했습니다'}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 8px; max-width: 500px; word-break: break-all;">
+                            ${error.stack ? error.stack.substring(0, 200) : ''}
+                        </div>
+                        <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: var(--gradient-primary); border: none; border-radius: var(--radius-md); color: white; font-weight: 600; cursor: pointer; margin-top: 1rem;">
+                            페이지 새로고침
+                        </button>
                     </div>
                 `;
             }
