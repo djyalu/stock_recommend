@@ -1901,6 +1901,48 @@ body {
     color: var(--danger);
 }
 
+/* 매매 신호 스타일 */
+.buy-signal {
+    color: #3b82f6 !important; /* 파란색 */
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+.wait-signal {
+    color: #ef4444 !important; /* 빨간색 */
+    background: rgba(239, 68, 68, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+.trading-signal {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.summary-ma20 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+.ma20-label {
+    font-weight: 600;
+}
+
+.ma20-value {
+    font-weight: 700;
+    color: var(--text);
+}
+
 .chart-btn {
     display: inline-flex;
     align-items: center;

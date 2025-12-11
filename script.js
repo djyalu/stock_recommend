@@ -2019,6 +2019,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="summary-ma20">
                             <span class="ma20-label">20일선:</span>
                             <span class="ma20-value">$${rec.ma20.toFixed(2)}</span>
+                            <span class="trading-signal ${rec.price < rec.ma20 ? 'buy-signal' : 'wait-signal'}" style="font-weight: 600; margin-left: 0.5rem;">
+                                ${rec.price < rec.ma20 ? 'BUY' : 'WAIT'}
+                            </span>
                         </div>
                         ` : ''}
                     </div>
@@ -2089,6 +2092,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="detail-metric">
                                     <span class="metric-label">20일선</span>
                                     <span class="metric-value">$${rec.ma20.toFixed(2)}</span>
+                                </div>
+                                <div class="detail-metric">
+                                    <span class="metric-label">매매 신호</span>
+                                    <span class="metric-value ${rec.price < rec.ma20 ? 'buy-signal' : 'wait-signal'}" style="font-weight: 600;">
+                                        ${rec.price < rec.ma20 ? 'BUY' : 'WAIT'}
+                                    </span>
                                 </div>
                                 ` : ''}
                             </div>
