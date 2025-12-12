@@ -1490,8 +1490,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     let response;
-                    let data;
-                    
+                            let data;
+                            
                     try {
                         if (useProxy) {
                             // 프록시 서버를 통한 호출
@@ -1513,7 +1513,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 throw new Error(`프록시 서버 응답 실패: ${response.status} - ${errorText.substring(0, 100)}`);
                             }
                             
-                            data = await response.json();
+                                data = await response.json();
                         } else {
                             // 직접 API 호출 시도 (CORS 에러 발생 가능)
                             response = await fetch(apiUrl, {
@@ -1538,25 +1538,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         // 프록시 서버 연결 확인
                         if (useProxy && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
-                            console.warn(`⚠️ 프록시 서버 연결 실패 (${PROXY_SERVER_URL})`);
-                            console.warn(`💡 프록시 서버가 실행 중인지 확인하세요:`);
-                            console.warn(`   node naver-proxy-server.js`);
+                            console.error(`❌ 프록시 서버 연결 실패: ${PROXY_SERVER_URL}`);
+                            console.error(`   에러: ${error.message}`);
                             
                             // 프록시 서버 상태 확인
                             try {
                                 const controller = new AbortController();
-                                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                                const timeoutId = setTimeout(() => controller.abort(), 5000);
                                 
-                                const healthCheck = await fetch(`${PROXY_SERVER_URL}/?query=test&display=1`, {
+                                console.log(`🔍 프록시 서버 상태 확인 중: ${PROXY_SERVER_URL}`);
+                                const healthCheck = await fetch(`${PROXY_SERVER_URL}/?query=삼성전자&display=1`, {
                                     method: 'GET',
-                                    signal: controller.signal
+                                    signal: controller.signal,
+                                    headers: {
+                                        'Accept': 'application/json'
+                                    }
                                 });
                                 
                                 clearTimeout(timeoutId);
-                                console.log(`   프록시 서버 상태: ${healthCheck.status === 200 ? '✅ 정상' : '⚠️ 응답 이상'}`);
+                                
+                                if (healthCheck.ok) {
+                                    const testData = await healthCheck.json();
+                                    console.log(`   ✅ 프록시 서버 정상 작동 (${testData.items?.length || 0}개 뉴스 반환)`);
+                                    console.warn(`   💡 일시적인 네트워크 문제일 수 있습니다. 다시 시도해보세요.`);
+                                } else {
+                                    console.error(`   ⚠️ 프록시 서버 응답 이상: ${healthCheck.status}`);
+                                    const errorText = await healthCheck.text();
+                                    console.error(`   응답: ${errorText.substring(0, 200)}`);
+                                }
                             } catch (healthError) {
-                                console.error(`   프록시 서버 상태: ❌ 연결 불가`);
+                                console.error(`   ❌ 프록시 서버 연결 불가`);
                                 console.error(`   ${healthError.message}`);
+                                console.error(`   💡 Vercel 배포 URL이 올바른지 확인하세요: ${PROXY_SERVER_URL}`);
+                                console.error(`   💡 config.js 파일에서 Vercel URL을 확인하세요`);
                             }
                             
                             continue;
@@ -1611,7 +1625,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     console.warn('날짜 파싱 실패:', item.pubDate);
                                 }
                                 
-                                allNews.push({
+                                                    allNews.push({
                                     headline: cleanTitle,
                                     summary: cleanDescription || `${query} 관련 뉴스`,
                                     source: item.originallink ? new URL(item.originallink).hostname.replace('www.', '') : '네이버 뉴스',
@@ -1632,8 +1646,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 충분한 뉴스가 모이면 중단
                     if (allNews.length >= 100) {
                         console.log(`✅ 충분한 뉴스 수집됨 (${allNews.length}개), 수집 중단`);
-                        break;
-                    }
+                                        break;
+                                    }
                 } catch (err) {
                     console.warn(`❌ "${query}" 검색 오류:`, err.message);
                     continue;
@@ -1687,7 +1701,26 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (uniqueNews.length === 0) {
                 console.error('❌ 주식 관련 뉴스 수집 실패 - 빈 배열 반환');
-                console.warn('💡 검색어나 필터 조건을 확인하세요');
+                console.error('📊 수집 통계:');
+                console.error(`   - 검색어 수: ${searchQueries.length}개`);
+                console.error(`   - 수집된 뉴스: ${allNews.length}개`);
+                console.error(`   - 필터링 후: ${uniqueNews.length}개`);
+                console.error('💡 가능한 원인:');
+                console.error('   1. 프록시 서버 연결 실패');
+                console.error('   2. 네이버 API 인증 오류');
+                console.error('   3. 필터링 조건이 너무 엄격함');
+                console.error('   4. 네트워크 문제');
+                
+                // 프록시 URL 정보 출력
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const isVercel = window.location.hostname.includes('vercel.app');
+                const VERCEL_PROXY_URL = (window.NAVER_PROXY_CONFIG && window.NAVER_PROXY_CONFIG.vercelProxyUrl) 
+                    || 'https://stock-recommend.vercel.app/api/naver-proxy';
+                
+                if (!isLocalhost && !isVercel) {
+                    console.error(`💡 사용 중인 프록시 URL: ${VERCEL_PROXY_URL}`);
+                    console.error('   이 URL이 올바른지 확인하세요.');
+                }
             }
             
             return uniqueNews.slice(0, 50); // 상위 50개
@@ -1732,7 +1765,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (proxyUrl.includes('allorigins.win')) {
                     const data = await response.json();
                     html = data.contents || '';
-                } else {
+                            } else {
                     html = await response.text();
                 }
                 
@@ -1741,9 +1774,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     continue;
                 }
                 
-                                    const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html; charset=utf-8');
-                
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html; charset=utf-8');
+                                
                 // 네이버 금융 뉴스 페이지의 실제 셀렉터들
                 const selectors = [
                     'ul.newsList li',
@@ -1777,7 +1810,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     allLinks.forEach((link, index) => {
                         if (index >= 20) return;
-                                                const href = link.getAttribute('href');
+                                            const href = link.getAttribute('href');
                         if (href && (href.includes('news') || href.includes('article') || href.includes('/item/'))) {
                             const headline = link.textContent.trim();
                             if (headline && headline.length > 5 && !headline.includes('더보기')) {
@@ -1786,15 +1819,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                     `https://finance.naver.com/${href}`);
                                 
                                 news.push({
-                                                        headline: headline,
+                                                    headline: headline,
                                     summary: `${sourceName} 뉴스`,
                                     source: sourceName,
-                                                        url: fullUrl,
+                                                    url: fullUrl,
                                     publishTime: Date.now() / 1000
-                                                    });
-                                                }
+                                                });
                                             }
-                                        });
+                                        }
+                                    });
                 } else {
                     // 정상적인 뉴스 항목 파싱
                     newsItems.forEach((item, index) => {
@@ -1850,9 +1883,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             const dateEl = item.querySelector(selector);
                             if (dateEl) {
                                 dateText = dateEl.textContent.trim();
-                                break;
+                                    break;
+                                }
                             }
-                        }
                         
                         const summarySelectors = [
                             '.summary', '.article_summary', '.news_summary', 
@@ -1882,8 +1915,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (news.length > 0) {
                     console.log(`✅ ${sourceName}: ${news.length}개 뉴스 수집 성공`);
                                     break;
-                                }
-            } catch (err) {
+                    }
+                } catch (err) {
                 console.warn(`❌ 프록시 실패 (${sourceName}):`, err.message);
                             continue;
                         }
@@ -2686,7 +2719,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.warn(`  - ${rec.name} (${rec.symbol}): ${rec.score.toFixed(1)}점`);
                 });
             }
-            renderNewsBasedRecommendations(newsArticles.slice(0, 10), finalRecommendations);
+            // 뉴스가 없을 때도 렌더링 (에러 메시지 표시)
+            const newsToDisplay = newsArticles && newsArticles.length > 0 
+                ? newsArticles.slice(0, 10) 
+                : [];
+            
+            console.log(`📰 화면에 표시할 뉴스: ${newsToDisplay.length}개`);
+            renderNewsBasedRecommendations(newsToDisplay, finalRecommendations);
 
             // UI 상태 복원
             if (analyzeBtn.querySelector('.btn-text')) {
@@ -2740,12 +2779,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="news-grid">
         `;
 
+        // 뉴스가 있는지 확인
+        if (!newsArticles || newsArticles.length === 0) {
+            newsHTML += `
+                <div class="news-card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📰</div>
+                    <h3 style="color: var(--text-muted); margin-bottom: 1rem;">뉴스를 불러올 수 없습니다</h3>
+                    <p style="color: var(--text-subtle); margin-bottom: 1.5rem;">
+                        네이버 API 프록시 서버 연결에 실패했습니다.<br>
+                        Vercel 프록시 서버가 정상 작동하는지 확인하세요.
+                    </p>
+                    <p style="font-size: 0.875rem; color: var(--text-subtle);">
+                        💡 해결 방법:<br>
+                        1. Vercel 배포가 완료되었는지 확인<br>
+                        2. config.js에서 Vercel URL이 올바른지 확인<br>
+                        3. 브라우저 콘솔에서 에러 메시지 확인
+                    </p>
+                </div>
+            `;
+        } else {
         newsArticles.forEach((news, index) => {
+                if (!news || !news.headline) return;
+                
             const date = news.publishTime ? new Date(news.publishTime * 1000).toLocaleDateString('ko-KR') : '최근';
             newsHTML += `
                 <div class="news-card">
                     <div class="news-header">
-                        <span class="news-source">${news.source}</span>
+                            <span class="news-source">${news.source || '네이버 뉴스'}</span>
                         <span class="news-date">${date}</span>
                     </div>
                     <h3 class="news-title">${news.headline}</h3>
@@ -2754,6 +2814,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         });
+        }
 
         newsHTML += `
                 </div>
