@@ -1403,197 +1403,576 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 네이버 금융에서 한국 주식 뉴스 가져오기 (종목별)
+    // 네이버 검색 API를 사용한 한국 주식 뉴스 수집
     async function fetchNaverFinanceNews() {
         try {
-            console.log('📰 네이버 금융 종목별 뉴스 수집 시작...');
+            console.log('📰 네이버 검색 API로 뉴스 수집 시작...');
             const allNews = [];
             
-            // 주요 한국 주식 종목 코드들
-            const koreanStocks = [
-                { code: '005930', name: '삼성전자' },
-                { code: '000660', name: 'SK하이닉스' },
-                { code: '035420', name: 'NAVER' },
-                { code: '035720', name: '카카오' },
-                { code: '051910', name: 'LG화학' },
-                { code: '006400', name: '삼성SDI' },
-                { code: '005380', name: '현대차' },
-                { code: '096770', name: 'SK이노베이션' },
-                { code: '003670', name: '포스코' },
-                { code: '017670', name: 'SK텔레콤' },
-                { code: '105560', name: 'KB금융' },
-                { code: '055550', name: '신한지주' }
+            // 네이버 API 인증 정보
+            const NAVER_CLIENT_ID = 'pGrI2i1yAxllCl1IjDl2';
+            const NAVER_CLIENT_SECRET = '8l0n_IdrmN';
+            const NAVER_API_URL = 'https://openapi.naver.com/v1/search/news.json';
+            
+            // 주식/금융 관련 뉴스만 검색하기 위한 키워드
+            const stockKeywords = ['주식', '증시', '금융', '투자', '종목', '시세', '주가', '코스피', '코스닥'];
+            
+            // 주요 한국 주식 종목명들 (주식 키워드와 함께 검색)
+            const stockNames = [
+                '삼성전자', 'SK하이닉스', 'NAVER', '카카오', 'LG화학',
+                '삼성SDI', '현대차', 'SK이노베이션', '포스코', 'SK텔레콤',
+                'KB금융', '신한지주', '삼성물산', '삼성바이오로직스', '삼성생명',
+                'LG전자', 'LG에너지솔루션', '크래프톤', '하이브', '셀트리온'
             ];
             
-            // 각 종목의 뉴스 페이지에서 뉴스 가져오기
-            for (const stock of koreanStocks.slice(0, 12)) {
+            // 주식 관련 일반 검색어
+            const marketQueries = [
+                '코스피', '코스닥', '증시', '주식 시장', '한국 주식',
+                '주식 투자', '주가', '종목 추천', '증권 시장'
+            ];
+            
+            // 검색어 생성: 종목명 + 주식 키워드 조합
+            const searchQueries = [];
+            
+            // 종목명은 그대로 사용 (이미 주식 관련)
+            stockNames.forEach(name => {
+                searchQueries.push(name);
+            });
+            
+            // 시장 관련 검색어도 추가
+            marketQueries.forEach(query => {
+                searchQueries.push(query);
+            });
+            
+            // 주식 관련 키워드 필터 (나중에 필터링에 사용)
+            const stockRelatedTerms = [
+                '주식', '증시', '금융', '투자', '종목', '시세', '주가', 
+                '코스피', '코스닥', '증권', '자산', '포트폴리오',
+                '배당', '실적', '매출', '영업이익', 'PER', 'PBR', 'ROE',
+                '상장', 'IPO', '인수합병', 'M&A', '자사주', '배당금'
+            ];
+            
+            // 각 검색어로 뉴스 수집
+            for (let i = 0; i < searchQueries.length; i++) {
+                const query = searchQueries[i];
                 try {
-                    console.log(`📰 ${stock.name}(${stock.code}) 뉴스 수집 중...`);
+                    console.log(`📰 "${query}" 뉴스 검색 중... (${i + 1}/${searchQueries.length})`);
                     
-                    // 네이버 금융 종목 뉴스 페이지
-                    const stockNewsUrl = `https://finance.naver.com/item/news.naver?code=${stock.code}`;
+                    // 네이버 검색 API 호출 (프록시 서버 사용)
+                    // 배포 환경 감지
+                    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                    const isVercel = window.location.hostname.includes('vercel.app');
                     
-                    // 여러 프록시 시도
-                    const proxies = [
-                        `https://api.allorigins.win/get?url=${encodeURIComponent(stockNewsUrl)}&charset=utf-8`,
-                        `https://corsproxy.io/?${encodeURIComponent(stockNewsUrl)}`,
-                        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(stockNewsUrl)}`
-                    ];
+                    // 프록시 서버 URL 결정
+                    // Vercel 배포 URL (GitHub Pages에서도 이 프록시 사용)
+                    const VERCEL_PROXY_URL = (window.NAVER_PROXY_CONFIG && window.NAVER_PROXY_CONFIG.vercelProxyUrl) 
+                        || 'https://stock-recommend.vercel.app/api/naver-proxy';
                     
-                    let success = false;
-                    for (const proxyUrl of proxies) {
-                        try {
-                            const response = await fetch(proxyUrl);
-                            let data;
+                    let PROXY_SERVER_URL;
+                    if (isLocalhost) {
+                        PROXY_SERVER_URL = 'http://localhost:3001';  // 로컬: 로컬 프록시 서버
+                    } else if (isVercel) {
+                        PROXY_SERVER_URL = `${window.location.origin}/api/naver-proxy`;  // Vercel: 서버리스 함수
+                    } else {
+                        // GitHub Pages 등: Vercel 프록시 서버 사용
+                        PROXY_SERVER_URL = VERCEL_PROXY_URL;
+                    }
+                    
+                    let apiUrl;
+                    let useProxy = PROXY_SERVER_URL !== null;
+                    
+                    if (useProxy) {
+                        // 프록시 서버 사용
+                        apiUrl = `${PROXY_SERVER_URL}?query=${encodeURIComponent(query)}&display=10&sort=date`;
+                    } else {
+                        // 직접 호출 (CORS 에러 발생 가능)
+                        apiUrl = `${NAVER_API_URL}?query=${encodeURIComponent(query)}&display=10&sort=date`;
+                    }
+                    
+                    let response;
+                    let data;
+                    
+                    try {
+                        if (useProxy) {
+                            // 프록시 서버를 통한 호출
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 15000);
                             
-                            if (proxyUrl.includes('allorigins.win')) {
-                                data = await response.json();
-                                if (data.contents) {
-                                    // 인코딩 처리
-                                    const parser = new DOMParser();
-                                    // UTF-8로 명시적으로 파싱
-                                    const doc = parser.parseFromString(data.contents, 'text/html; charset=utf-8');
-                                    
-                                    // 뉴스 리스트 찾기
-                                    const newsItems = doc.querySelectorAll('.newsList li, .articleSubject, tr[onclick*="news_read"], table.newsList tr, .articleList li');
-                                    
-                                    if (newsItems.length > 0) {
-                                        newsItems.forEach((item, index) => {
-                                            if (index >= 5) return; // 종목당 최대 5개
-                                            
-                                            const link = item.querySelector('a');
-                                            if (link) {
-                                                const headline = link.textContent.trim();
-                                                if (!headline || headline.length < 5) return;
-                                                
-                                                const href = link.getAttribute('href');
-                                                const fullUrl = href.startsWith('http') ? href : `https://finance.naver.com${href}`;
-                                                
-                                                // 날짜 찾기
-                                                const dateEl = item.querySelector('.date, .wdate, td.date, .articleInfo .date');
-                                                const dateText = dateEl ? dateEl.textContent.trim() : '';
-                                                
-                                                // 중복 체크
-                                                if (!allNews.find(n => n.headline === headline || n.url === fullUrl)) {
-                                                    allNews.push({
-                                                        headline: headline,
-                                                        summary: `${stock.name} 관련 뉴스`,
-                                                        source: `네이버 금융`,
-                                                        url: fullUrl,
-                                                        publishTime: parseNaverDate(dateText) || Date.now() / 1000
-                                                    });
-                                                }
-                                            }
-                                        });
-                                        success = true;
-                                        break;
-                                    }
+                            response = await fetch(apiUrl, {
+                                method: 'GET',
+                                signal: controller.signal,
+                                headers: {
+                                    'Accept': 'application/json'
                                 }
-                            } else {
-                                // 다른 프록시는 직접 HTML 반환
-                                const html = await response.text();
-                                const parser = new DOMParser();
-                                const doc = parser.parseFromString(html, 'text/html; charset=utf-8');
-                                
-                                const newsItems = doc.querySelectorAll('.newsList li, .articleSubject, tr[onclick*="news_read"], table.newsList tr');
-                                
-                                if (newsItems.length > 0) {
-                                    newsItems.forEach((item, index) => {
-                                        if (index >= 5) return;
-                                        
-                                        const link = item.querySelector('a');
-                                        if (link) {
-                                            const headline = link.textContent.trim();
-                                            if (!headline || headline.length < 5) return;
-                                            
-                                            const href = link.getAttribute('href');
-                                            const fullUrl = href.startsWith('http') ? href : `https://finance.naver.com${href}`;
-                                            
-                                            const dateEl = item.querySelector('.date, .wdate, td.date');
-                                            const dateText = dateEl ? dateEl.textContent.trim() : '';
-                                            
-                                            if (!allNews.find(n => n.headline === headline || n.url === fullUrl)) {
-                                                allNews.push({
-                                                    headline: headline,
-                                                    summary: `${stock.name} 관련 뉴스`,
-                                                    source: `네이버 금융`,
-                                                    url: fullUrl,
-                                                    publishTime: parseNaverDate(dateText) || Date.now() / 1000
-                                                });
-                                            }
-                                        }
-                                    });
-                                    success = true;
-                                    break;
-                                }
+                            });
+                            
+                            clearTimeout(timeoutId);
+                            
+                            if (!response.ok) {
+                                const errorText = await response.text();
+                                throw new Error(`프록시 서버 응답 실패: ${response.status} - ${errorText.substring(0, 100)}`);
                             }
-                        } catch (proxyErr) {
-                            console.warn(`프록시 실패 (${stock.name}):`, proxyErr);
+                            
+                            data = await response.json();
+                        } else {
+                            // 직접 API 호출 시도 (CORS 에러 발생 가능)
+                            response = await fetch(apiUrl, {
+                                method: 'GET',
+                                headers: {
+                                    'X-Naver-Client-Id': NAVER_CLIENT_ID,
+                                    'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
+                                }
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            }
+                            
+                            data = await response.json();
+                        }
+                    } catch (error) {
+                        // 에러 상세 로깅
+                        console.error(`❌ "${query}" 검색 실패:`, error);
+                        console.error(`   에러 타입: ${error.name}`);
+                        console.error(`   에러 메시지: ${error.message}`);
+                        
+                        // 프록시 서버 연결 확인
+                        if (useProxy && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+                            console.warn(`⚠️ 프록시 서버 연결 실패 (${PROXY_SERVER_URL})`);
+                            console.warn(`💡 프록시 서버가 실행 중인지 확인하세요:`);
+                            console.warn(`   node naver-proxy-server.js`);
+                            
+                            // 프록시 서버 상태 확인
+                            try {
+                                const controller = new AbortController();
+                                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                                
+                                const healthCheck = await fetch(`${PROXY_SERVER_URL}/?query=test&display=1`, {
+                                    method: 'GET',
+                                    signal: controller.signal
+                                });
+                                
+                                clearTimeout(timeoutId);
+                                console.log(`   프록시 서버 상태: ${healthCheck.status === 200 ? '✅ 정상' : '⚠️ 응답 이상'}`);
+                            } catch (healthError) {
+                                console.error(`   프록시 서버 상태: ❌ 연결 불가`);
+                                console.error(`   ${healthError.message}`);
+                            }
+                            
+                            continue;
+                        } else if (error.message.includes('CORS')) {
+                            console.warn(`💡 CORS 에러: 프록시 서버를 사용하세요`);
+                            console.warn(`   node naver-proxy-server.js`);
+                            continue;
+                        } else {
+                            console.warn(`⚠️ "${query}" 검색 건너뜀`);
                             continue;
                         }
                     }
                     
-                    if (!success) {
-                        console.warn(`⚠️ ${stock.name} 뉴스 수집 실패`);
+                    if (!data || !data.items) {
+                        console.warn(`⚠️ "${query}" 검색 결과 없음`);
+                        continue;
+                    }
+                    
+                    if (data.items && data.items.length > 0) {
+                        let stockNewsCount = 0;
+                        
+                        data.items.forEach(item => {
+                            // HTML 태그 제거
+                            const cleanTitle = item.title.replace(/<[^>]*>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+                            const cleanDescription = item.description.replace(/<[^>]*>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+                            
+                            // 주식/금융 관련 뉴스인지 확인
+                            const newsText = (cleanTitle + ' ' + cleanDescription).toLowerCase();
+                            const isStockRelated = stockRelatedTerms.some(term => 
+                                newsText.includes(term.toLowerCase())
+                            ) || 
+                            // 금융 뉴스 출처 확인
+                            (item.originallink && (
+                                item.originallink.includes('finance') ||
+                                item.originallink.includes('economy') ||
+                                item.originallink.includes('mk.co.kr') ||
+                                item.originallink.includes('hankyung.com') ||
+                                item.originallink.includes('edaily.co.kr') ||
+                                item.originallink.includes('yna.co.kr') ||
+                                item.originallink.includes('chosun.com')
+                            ));
+                            
+                            // 주식 관련 뉴스만 추가
+                            if (isStockRelated) {
+                                // 날짜 파싱 (네이버 API는 "Mon, 15 Jan 2024 14:30:00 +0900" 형식)
+                                let publishTime = Date.now() / 1000;
+                                try {
+                                    if (item.pubDate) {
+                                        publishTime = new Date(item.pubDate).getTime() / 1000;
+                                    }
+                                } catch (e) {
+                                    console.warn('날짜 파싱 실패:', item.pubDate);
+                                }
+                                
+                                allNews.push({
+                                    headline: cleanTitle,
+                                    summary: cleanDescription || `${query} 관련 뉴스`,
+                                    source: item.originallink ? new URL(item.originallink).hostname.replace('www.', '') : '네이버 뉴스',
+                                    url: item.originallink || item.link,
+                                    publishTime: publishTime
+                                });
+                                
+                                stockNewsCount++;
+                            }
+                        });
+                        
+                        console.log(`✅ "${query}" ${stockNewsCount}/${data.items.length}개 주식 뉴스 수집 완료`);
+                    }
+                    
+                    // API 호출 제한 방지 (초당 10회 제한)
+                    await new Promise(resolve => setTimeout(resolve, 150));
+                    
+                    // 충분한 뉴스가 모이면 중단
+                    if (allNews.length >= 100) {
+                        console.log(`✅ 충분한 뉴스 수집됨 (${allNews.length}개), 수집 중단`);
+                        break;
                     }
                 } catch (err) {
-                    console.warn(`❌ ${stock.name} 뉴스 수집 오류:`, err);
+                    console.warn(`❌ "${query}" 검색 오류:`, err.message);
+                    continue;
+                }
+            }
+            
+            // 중복 제거 및 주식 관련 뉴스만 필터링
+            const uniqueNews = [];
+            const seenHeadlines = new Set();
+            const seenUrls = new Set();
+            
+            allNews.forEach(news => {
+                const normalizedHeadline = news.headline.toLowerCase().trim();
+                const normalizedUrl = news.url.toLowerCase();
+                
+                // 중복 체크
+                if (seenHeadlines.has(normalizedHeadline) || seenUrls.has(normalizedUrl)) {
+                    return;
                 }
                 
-                // API 제한 방지
-                await new Promise(resolve => setTimeout(resolve, 400));
-            }
+                // 최종 주식 관련 여부 확인 (제목과 요약 모두 확인)
+                const newsText = (news.headline + ' ' + news.summary).toLowerCase();
+                const isStockRelated = stockRelatedTerms.some(term => 
+                    newsText.includes(term.toLowerCase())
+                ) || 
+                // 금융 뉴스 출처 확인
+                (news.url && (
+                    news.url.includes('finance') ||
+                    news.url.includes('economy') ||
+                    news.url.includes('mk.co.kr') ||
+                    news.url.includes('hankyung.com') ||
+                    news.url.includes('edaily.co.kr') ||
+                    news.url.includes('yna.co.kr') ||
+                    news.url.includes('chosun.com') ||
+                    news.url.includes('naver.com/finance')
+                ));
+                
+                // 주식 관련 뉴스만 추가
+                if (isStockRelated) {
+                    seenHeadlines.add(normalizedHeadline);
+                    seenUrls.add(normalizedUrl);
+                    uniqueNews.push(news);
+                }
+            });
             
             // 최신순 정렬
-            allNews.sort((a, b) => b.publishTime - a.publishTime);
+            uniqueNews.sort((a, b) => b.publishTime - a.publishTime);
             
-            console.log(`✅ 네이버 금융 종목별 뉴스 총 ${allNews.length}개 수집 완료`);
-            if (allNews.length === 0) {
-                console.error('❌ 네이버 뉴스 수집 실패 - 빈 배열 반환');
+            console.log(`✅ 네이버 검색 API 주식 뉴스 총 ${uniqueNews.length}개 수집 완료`);
+            console.log(`📊 필터링: ${allNews.length}개 → ${uniqueNews.length}개 (주식 관련만)`);
+            
+            if (uniqueNews.length === 0) {
+                console.error('❌ 주식 관련 뉴스 수집 실패 - 빈 배열 반환');
+                console.warn('💡 검색어나 필터 조건을 확인하세요');
             }
-            return allNews.slice(0, 30); // 상위 30개
+            
+            return uniqueNews.slice(0, 50); // 상위 50개
         } catch (error) {
-            console.error('❌ 네이버 금융 뉴스 수집 오류:', error);
+            console.error('❌ 네이버 검색 API 뉴스 수집 오류:', error);
             return [];
         }
     }
     
-    // 네이버 날짜 파싱 함수
+    // 네이버 뉴스 URL에서 뉴스 추출 (개선된 버전)
+    async function fetchNaverNewsFromUrl(url, sourceName) {
+        const news = [];
+                    const proxies = [
+            `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&charset=utf-8`,
+            `https://corsproxy.io/?${encodeURIComponent(url)}`,
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+        ];
+        
+                    for (const proxyUrl of proxies) {
+                        try {
+                console.log(`🔄 프록시 시도: ${proxyUrl.substring(0, 50)}...`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                const response = await fetch(proxyUrl, { 
+                    headers: { 
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    },
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    console.warn(`❌ 응답 실패: ${response.status}`);
+                    continue;
+                }
+                
+                let html = '';
+                            if (proxyUrl.includes('allorigins.win')) {
+                    const data = await response.json();
+                    html = data.contents || '';
+                } else {
+                    html = await response.text();
+                }
+                
+                if (!html || html.length < 100) {
+                    console.warn(`⚠️ HTML 내용 부족: ${html.length} bytes`);
+                    continue;
+                }
+                
+                                    const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html; charset=utf-8');
+                
+                // 네이버 금융 뉴스 페이지의 실제 셀렉터들
+                const selectors = [
+                    'ul.newsList li',
+                    'table.newsList tbody tr',
+                    '.articleList li',
+                    '.news_list li',
+                    'table.type_1 tbody tr',
+                    'table tbody tr[onclick*="news"]',
+                    '.articleSubject',
+                    '.news_item',
+                    'article.news_item',
+                    '.news_area .news_item',
+                    'dl.articleSubject',
+                    'div.articleSubject'
+                ];
+                
+                let newsItems = [];
+                for (const selector of selectors) {
+                    const items = doc.querySelectorAll(selector);
+                    if (items.length > 0) {
+                        newsItems = Array.from(items);
+                        console.log(`✅ 셀렉터 "${selector}"로 ${items.length}개 항목 발견`);
+                        break;
+                    }
+                }
+                
+                if (newsItems.length === 0) {
+                    // 모든 링크를 찾아서 뉴스로 간주
+                    const allLinks = doc.querySelectorAll('a[href*="news"], a[href*="article"], a[href*="/item/"]');
+                    console.log(`⚠️ 뉴스 항목 없음, 링크 ${allLinks.length}개 발견`);
+                    
+                    allLinks.forEach((link, index) => {
+                        if (index >= 20) return;
+                                                const href = link.getAttribute('href');
+                        if (href && (href.includes('news') || href.includes('article') || href.includes('/item/'))) {
+                            const headline = link.textContent.trim();
+                            if (headline && headline.length > 5 && !headline.includes('더보기')) {
+                                const fullUrl = href.startsWith('http') ? href : 
+                                    (href.startsWith('/') ? `https://finance.naver.com${href}` : 
+                                    `https://finance.naver.com/${href}`);
+                                
+                                news.push({
+                                                        headline: headline,
+                                    summary: `${sourceName} 뉴스`,
+                                    source: sourceName,
+                                                        url: fullUrl,
+                                    publishTime: Date.now() / 1000
+                                                    });
+                                                }
+                                            }
+                                        });
+                } else {
+                    // 정상적인 뉴스 항목 파싱
+                    newsItems.forEach((item, index) => {
+                        if (index >= 15) return;
+                        
+                        let link = item.querySelector('a[href*="news"], a[href*="article"], a[href*="/item/"]');
+                        if (!link) {
+                            const onclick = item.getAttribute('onclick');
+                            if (onclick) {
+                                const urlMatch = onclick.match(/['"]([^'"]*news[^'"]*)['"]/);
+                                if (urlMatch) {
+                                    link = { 
+                                        textContent: item.textContent.trim(),
+                                        getAttribute: () => urlMatch[1]
+                                    };
+                                }
+                            }
+                        }
+                        
+                        if (!link) {
+                            const text = item.textContent.trim();
+                            if (text && text.length > 10) {
+                                const href = item.querySelector('a')?.getAttribute('href') || 
+                                            item.closest('tr')?.querySelector('a')?.getAttribute('href');
+                                if (href) {
+                                    link = {
+                                        textContent: text.split('\n')[0].trim(),
+                                        getAttribute: () => href
+                                    };
+                                }
+                            }
+                        }
+                        
+                        if (!link) return;
+                        
+                                            const headline = link.textContent.trim();
+                        if (!headline || headline.length < 5 || headline.includes('더보기')) return;
+                                            
+                                            const href = link.getAttribute('href');
+                        if (!href) return;
+                        
+                        const fullUrl = href.startsWith('http') ? href : 
+                            (href.startsWith('/') ? `https://finance.naver.com${href}` : 
+                            `https://finance.naver.com/${href}`);
+                        
+                        const dateSelectors = [
+                            '.date', '.wdate', 'td.date', '.articleInfo .date', 
+                            '.news_date', '.date_info', 'span.date', 'em.date',
+                            'td:last-child', '.info .date'
+                        ];
+                        let dateText = '';
+                        for (const selector of dateSelectors) {
+                            const dateEl = item.querySelector(selector);
+                            if (dateEl) {
+                                dateText = dateEl.textContent.trim();
+                                break;
+                            }
+                        }
+                        
+                        const summarySelectors = [
+                            '.summary', '.article_summary', '.news_summary', 
+                            'p', 'dd', '.desc', '.article_desc'
+                        ];
+                        let summary = `${sourceName} 뉴스`;
+                        for (const selector of summarySelectors) {
+                            const summaryEl = item.querySelector(selector);
+                            if (summaryEl && summaryEl.textContent.trim().length > 10) {
+                                summary = summaryEl.textContent.trim().substring(0, 100);
+                                break;
+                            }
+                        }
+                        
+                        if (!news.find(n => n.headline === headline || n.url === fullUrl)) {
+                            news.push({
+                                                    headline: headline,
+                                summary: summary,
+                                source: sourceName,
+                                                    url: fullUrl,
+                                                    publishTime: parseNaverDate(dateText) || Date.now() / 1000
+                                                });
+                                        }
+                                    });
+                }
+                
+                if (news.length > 0) {
+                    console.log(`✅ ${sourceName}: ${news.length}개 뉴스 수집 성공`);
+                                    break;
+                                }
+            } catch (err) {
+                console.warn(`❌ 프록시 실패 (${sourceName}):`, err.message);
+                            continue;
+                        }
+                    }
+                    
+        return news;
+    }
+    
+    // 개별 종목 뉴스 수집 함수
+    async function fetchStockNewsFromNaver(stock) {
+        try {
+            const stockNewsUrl = `https://finance.naver.com/item/news.naver?code=${stock.code}`;
+            const news = await fetchNaverNewsFromUrl(stockNewsUrl, `네이버 금융 - ${stock.name}`);
+            
+            // 종목명을 요약에 포함
+            return news.map(item => ({
+                ...item,
+                summary: `${stock.name} 관련: ${item.summary}`
+            }));
+        } catch (err) {
+            console.warn(`❌ ${stock.name} 뉴스 수집 오류:`, err);
+            return [];
+        }
+    }
+    
+    // 네이버 날짜 파싱 함수 (개선된 버전)
     function parseNaverDate(dateText) {
         if (!dateText) return Date.now() / 1000;
         
         try {
+            const now = new Date();
+            const trimmed = dateText.trim();
+            
             // "2024.01.15 14:30" 형식
-            const match = dateText.match(/(\d{4})\.(\d{2})\.(\d{2})\s+(\d{2}):(\d{2})/);
-            if (match) {
-                const [, year, month, day, hour, minute] = match;
+            const fullDateMatch = trimmed.match(/(\d{4})\.(\d{2})\.(\d{2})\s+(\d{2}):(\d{2})/);
+            if (fullDateMatch) {
+                const [, year, month, day, hour, minute] = fullDateMatch;
                 const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
                 return Math.floor(date.getTime() / 1000);
             }
             
             // "01.15 14:30" 형식 (올해)
-            const match2 = dateText.match(/(\d{2})\.(\d{2})\s+(\d{2}):(\d{2})/);
-            if (match2) {
-                const [, month, day, hour, minute] = match2;
-                const now = new Date();
+            const shortDateMatch = trimmed.match(/(\d{2})\.(\d{2})\s+(\d{2}):(\d{2})/);
+            if (shortDateMatch) {
+                const [, month, day, hour, minute] = shortDateMatch;
                 const date = new Date(now.getFullYear(), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+                // 과거 날짜가 미래로 파싱되면 작년으로 처리
+                if (date > now) {
+                    return Math.floor(new Date(now.getFullYear() - 1, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute)).getTime() / 1000);
+                }
                 return Math.floor(date.getTime() / 1000);
             }
             
             // "1시간 전", "30분 전" 형식
-            const hourMatch = dateText.match(/(\d+)시간\s*전/);
+            const hourMatch = trimmed.match(/(\d+)시간\s*전/);
             if (hourMatch) {
                 const hours = parseInt(hourMatch[1]);
                 return Math.floor((Date.now() - hours * 60 * 60 * 1000) / 1000);
             }
             
-            const minuteMatch = dateText.match(/(\d+)분\s*전/);
+            const minuteMatch = trimmed.match(/(\d+)분\s*전/);
             if (minuteMatch) {
                 const minutes = parseInt(minuteMatch[1]);
                 return Math.floor((Date.now() - minutes * 60 * 1000) / 1000);
             }
+            
+            // "방금 전" 형식
+            if (trimmed.includes('방금') || trimmed.includes('just now')) {
+                return Math.floor(Date.now() / 1000);
+            }
+            
+            // "어제", "오늘" 형식
+            if (trimmed.includes('어제')) {
+                return Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
+            }
+            
+            if (trimmed.includes('오늘')) {
+                return Math.floor(Date.now() / 1000);
+            }
+            
+            // "2024-01-15" 형식
+            const dashMatch = trimmed.match(/(\d{4})-(\d{2})-(\d{2})/);
+            if (dashMatch) {
+                const [, year, month, day] = dashMatch;
+                const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                return Math.floor(date.getTime() / 1000);
+            }
         } catch (e) {
-            console.warn('날짜 파싱 실패:', dateText);
+            console.warn('날짜 파싱 실패:', dateText, e);
         }
         
         return Date.now() / 1000;
@@ -3358,14 +3737,76 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Generate Korean summary for news headlines
+    // Generate Korean summary for news headlines (개선된 버전)
     function summarizeHeadline(headline, lang) {
         if (lang === 'en') return headline;
         
         const lowerHeadline = headline.toLowerCase();
+        const headlineKR = headline; // 한국어 헤드라인은 그대로 사용
         
-        // Pattern-based summary generation
-        const patterns = [
+        // 한국어 패턴 우선 체크
+        const koreanPatterns = [
+            // 주가 변동
+            { pattern: /상승|급등|상승세|상승률|상승폭|반등|부양/i, 
+              summary: { ko: '📈 주가 상승 소식', ja: '📈 株価上昇', zh: '📈 股价上涨', es: '📈 Acción sube' }},
+            { pattern: /하락|급락|하락세|하락률|하락폭|폭락|추락/i, 
+              summary: { ko: '📉 주가 하락 소식', ja: '📉 株価下落', zh: '📉 股价下跌', es: '📉 Acción cae' }},
+            { pattern: /최고가|신고가|사상최고|신기록|돌파|상한가/i, 
+              summary: { ko: '🎯 사상 최고가 달성', ja: '🎯 過去最高値更新', zh: '🎯 创历史新高', es: '🎯 Récord histórico' }},
+            { pattern: /최저가|신저가|사상최저|하한가/i, 
+              summary: { ko: '📉 사상 최저가 기록', ja: '📉 過去最低値', zh: '📉 创历史新低', es: '📉 Mínimo histórico' }},
+            
+            // 실적 관련
+            { pattern: /실적.*상회|실적.*초과|실적.*돌파|실적.*기대치.*상회/i, 
+              summary: { ko: '✅ 실적 예상치 상회', ja: '✅ 予想を上回る', zh: '✅ 超预期', es: '✅ Supera expectativas' }},
+            { pattern: /실적.*하회|실적.*미달|실적.*부진|실적.*기대치.*하회/i, 
+              summary: { ko: '❌ 실적 예상치 하회', ja: '❌ 予想を下回る', zh: '❌ 低于预期', es: '❌ Por debajo de expectativas' }},
+            { pattern: /실적.*발표|분기실적|연간실적|실적.*공시/i, 
+              summary: { ko: '📊 실적 발표 관련', ja: '📊 決算発表', zh: '📊 业绩公告', es: '📊 Resultados financieros' }},
+            { pattern: /매출.*증가|매출.*성장|매출.*확대|영업이익.*증가/i, 
+              summary: { ko: '💰 매출 성장 발표', ja: '💰 売上増加', zh: '💰 营收增长', es: '💰 Ingresos crecen' }},
+            { pattern: /손실|적자|영업손실|순손실/i, 
+              summary: { ko: '❌ 손실 발생', ja: '❌ 損失発生', zh: '❌ 出现亏损', es: '❌ Pérdidas' }},
+            
+            // 애널리스트 평가
+            { pattern: /목표가.*상향|투자의견.*상향|목표주가.*인상/i, 
+              summary: { ko: '⬆️ 애널리스트 목표가 상향', ja: '⬆️ 目標株価引き上げ', zh: '⬆️ 上调目标价', es: '⬆️ Mejora calificación' }},
+            { pattern: /목표가.*하향|투자의견.*하향|목표주가.*인하/i, 
+              summary: { ko: '⬇️ 애널리스트 목표가 하향', ja: '⬇️ 目標株価引き下げ', zh: '⬇️ 下调目标价', es: '⬇️ Rebaja calificación' }},
+            { pattern: /매수.*추천|강력매수|투자의견.*매수/i, 
+              summary: { ko: '🟢 매수 추천 등급', ja: '🟢 買い推奨', zh: '🟢 买入评级', es: '🟢 Calificación compra' }},
+            { pattern: /매도.*추천|투자의견.*매도|비추천/i, 
+              summary: { ko: '🔴 매도 추천 등급', ja: '🔴 売り推奨', zh: '🔴 卖出评级', es: '🔴 Calificación venta' }},
+            
+            // M&A 및 사업
+            { pattern: /인수|합병|M&A|인수합병/i, 
+              summary: { ko: '🤝 인수합병(M&A) 소식', ja: '🤝 M&A関連', zh: '🤝 收购消息', es: '🤝 Adquisición' }},
+            { pattern: /제휴|파트너십|협력|계약|수주|낙찰/i, 
+              summary: { ko: '🤝 파트너십 체결', ja: '🤝 提携発表', zh: '🤝 合作协议', es: '🤝 Asociación' }},
+            { pattern: /구조조정|감원|인력.*감축|조정/i, 
+              summary: { ko: '⚠️ 구조조정/감원 발표', ja: '⚠️ 人員削減', zh: '⚠️ 裁员消息', es: '⚠️ Recortes de empleo' }},
+            
+            // 시장 및 거래
+            { pattern: /공시|공시.*제출|공시.*발표/i, 
+              summary: { ko: '📋 공시 제출', ja: '📋 開示', zh: '📋 公告', es: '📋 Divulgación' }},
+            { pattern: /배당|배당금|배당.*지급/i, 
+              summary: { ko: '💵 배당 관련 소식', ja: '💵 配当関連', zh: '💵 股息消息', es: '💵 Dividendo' }},
+            { pattern: /자사주.*매입|자기주식.*매입|주식.*매입/i, 
+              summary: { ko: '🔄 자사주 매입 발표', ja: '🔄 自社株買い', zh: '🔄 回购股票', es: '🔄 Recompra de acciones' }},
+            { pattern: /거래량.*상위|거래대금.*상위|시장.*동향/i, 
+              summary: { ko: '📊 시장 동향/거래량 상위', ja: '📊 売買代金上位', zh: '📊 成交活跃', es: '📊 Más activas' }},
+        ];
+        
+        // 한국어 패턴 먼저 체크
+        for (const { pattern, summary } of koreanPatterns) {
+            if (pattern.test(headlineKR)) {
+                const localSummary = summary[lang] || summary.ko;
+                return `<div class="news-summary-ko">${localSummary}</div><div class="news-headline-original">${headline}</div>`;
+            }
+        }
+        
+        // 영어 패턴 체크
+        const englishPatterns = [
             // Price movements
             { pattern: /(?:stock|shares?)\s+(?:rises?|jumps?|surges?|gains?|soars?)/i, 
               summary: { ko: '📈 주가 상승 소식', ja: '📈 株価上昇', zh: '📈 股价上涨', es: '📈 Acción sube' }},
@@ -3423,26 +3864,31 @@ document.addEventListener('DOMContentLoaded', () => {
               summary: { ko: '👀 주목할 종목 추천', ja: '👀 注目銘柄', zh: '👀 值得关注', es: '👀 Acciones a observar' }}
         ];
 
-        // Find matching pattern
-        for (const { pattern, summary } of patterns) {
+        // 영어 패턴 체크
+        for (const { pattern, summary } of englishPatterns) {
             if (pattern.test(headline)) {
                 const localSummary = summary[lang] || summary.ko;
                 return `<div class="news-summary-ko">${localSummary}</div><div class="news-headline-original">${headline}</div>`;
             }
         }
 
-        // Fallback: keyword extraction
+        // Fallback: keyword extraction (한국어 키워드 추가)
         const keywords = {
+            // 영어
             'rises': '상승', 'falls': '하락', 'drops': '하락', 'gains': '상승',
             'jumps': '급등', 'surges': '급등', 'plunges': '급락', 'stock': '주식',
             'earnings': '실적', 'revenue': '매출', 'profit': '수익', 'loss': '손실',
             'buy': '매수', 'sell': '매도', 'upgrade': '상향', 'downgrade': '하향',
-            'target': '목표가', 'analyst': '애널리스트', 'market': '시장'
+            'target': '목표가', 'analyst': '애널리스트', 'market': '시장',
+            // 한국어
+            '상승': '상승', '하락': '하락', '급등': '급등', '급락': '급락',
+            '실적': '실적', '매출': '매출', '수익': '수익', '손실': '손실',
+            '매수': '매수', '매도': '매도', '목표가': '목표가', '애널리스트': '애널리스트'
         };
 
         let foundKeywords = [];
-        for (const [eng, kor] of Object.entries(keywords)) {
-            if (lowerHeadline.includes(eng)) {
+        for (const [key, kor] of Object.entries(keywords)) {
+            if (lowerHeadline.includes(key) || headlineKR.includes(key)) {
                 foundKeywords.push(kor);
             }
         }
@@ -3545,36 +3991,87 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function analyzeNewsSentiment(newsItems) {
         let score = 0;
-        const positiveKeywords = ['rise', 'jump', 'gain', 'bull', 'high', 'record', 'profit', 'beat', 'growth', 'surge', 'up'];
-        const negativeKeywords = ['fall', 'drop', 'loss', 'bear', 'low', 'miss', 'crash', 'risk', 'down', 'decline', 'weak'];
+        
+        // 영어 키워드
+        const positiveKeywords = ['rise', 'jump', 'gain', 'bull', 'high', 'record', 'profit', 'beat', 'growth', 'surge', 'up', 'increase', 'strong', 'positive', 'exceed', 'outperform'];
+        const negativeKeywords = ['fall', 'drop', 'loss', 'bear', 'low', 'miss', 'crash', 'risk', 'down', 'decline', 'weak', 'decrease', 'negative', 'underperform', 'warn', 'concern'];
+        
+        // 한국어 키워드 (개선)
+        const positiveKeywordsKR = [
+            '상승', '급등', '상승세', '상승률', '상승폭', '상승세', '상승세', '상승세',
+            '증가', '성장', '확대', '향상', '개선', '회복', '반등', '부양',
+            '실적', '수익', '이익', '흑자', '영업이익', '순이익', '매출',
+            '최고가', '신고가', '사상최고', '신기록', '돌파', '상한가',
+            '긍정', '호재', '낙관', '기대', '전망', '유리', '강세',
+            '목표가', '상향', '투자의견', '매수', '추천', '강력매수',
+            '인수', '합병', '제휴', '계약', '수주', '낙찰'
+        ];
+        
+        const negativeKeywordsKR = [
+            '하락', '급락', '하락세', '하락률', '하락폭', '하락세',
+            '감소', '축소', '위축', '악화', '부진', '침체', '후퇴',
+            '손실', '적자', '영업손실', '순손실', '부채', '채무',
+            '최저가', '신저가', '사상최저', '하한가', '폭락',
+            '부정', '악재', '비관', '우려', '불안', '불리', '약세',
+            '목표가', '하향', '매도', '비추천', '투기', '위험',
+            '구조조정', '감원', '퇴출', '상장폐지', '경고', '제재'
+        ];
 
         let foundKeywords = new Set();
+        let foundKeywordsKR = new Set();
 
         newsItems.forEach(item => {
-            const text = (item.headline + " " + item.summary).toLowerCase();
+            const text = (item.headline + " " + (item.summary || '')).toLowerCase();
+            const textKR = item.headline + " " + (item.summary || '');
 
+            // 영어 키워드 체크
             positiveKeywords.forEach(word => {
                 if (text.includes(word)) {
-                    score++;
+                    score += 1;
                     foundKeywords.add(word);
                 }
             });
 
             negativeKeywords.forEach(word => {
                 if (text.includes(word)) {
-                    score--;
+                    score -= 1;
                     foundKeywords.add(word);
+                }
+            });
+            
+            // 한국어 키워드 체크
+            positiveKeywordsKR.forEach(keyword => {
+                if (textKR.includes(keyword)) {
+                    score += 1.5; // 한국어 키워드는 가중치 높게
+                    foundKeywordsKR.add(keyword);
+                }
+            });
+
+            negativeKeywordsKR.forEach(keyword => {
+                if (textKR.includes(keyword)) {
+                    score -= 1.5; // 한국어 키워드는 가중치 높게
+                    foundKeywordsKR.add(keyword);
                 }
             });
         });
 
+        // 뉴스 개수로 정규화
+        const normalizedScore = newsItems.length > 0 ? score / Math.max(newsItems.length / 3, 1) : 0;
+
         let sentimentKey = 'newsNeutral';
-        if (score > 1) sentimentKey = 'newsPositive';
-        if (score < -1) sentimentKey = 'newsNegative';
+        if (normalizedScore > 1.5) sentimentKey = 'newsPositive';
+        if (normalizedScore < -1.5) sentimentKey = 'newsNegative';
+
+        // 키워드 조합
+        const allKeywords = [...Array.from(foundKeywords), ...Array.from(foundKeywordsKR)];
+        const keywordsText = allKeywords.length > 0 
+            ? allKeywords.slice(0, 5).join(', ') 
+            : '';
 
         return {
             key: sentimentKey,
-            keywords: Array.from(foundKeywords).slice(0, 3).join(', ')
+            score: normalizedScore,
+            keywords: keywordsText
         };
     }
 

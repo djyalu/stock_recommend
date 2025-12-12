@@ -3,3 +3,6 @@ assets_original_backup/
 package-lock.json
 *.log
 .DS_Store
+test-*.js
+test-*.html
+naver-proxy-server.js
