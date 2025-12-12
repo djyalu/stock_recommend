@@ -1,19 +1,8 @@
 {
-  "version": 2,
   "functions": {
     "api/naver-proxy.js": {
       "maxDuration": 10
     }
-  },
-  "routes": [
-    {
-      "src": "/api/naver-proxy",
-      "dest": "/api/naver-proxy.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ]
+  }
 }
 
